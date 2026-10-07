@@ -3,6 +3,7 @@ import { motion, animate, useInView } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Terminal } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { useProfile, useThmStats } from '../lib/hooks'
 
 /* ─── Animated counter ─── */
 const Counter = ({ from = 0, to, duration = 1.8, suffix = '' }) => {
@@ -41,18 +42,18 @@ const GlowDivider = ({ delay = 0 }) => (
         backgroundRepeat: 'no-repeat',
       }}
       animate={{ backgroundPosition: ['-50% 0%', '150% 0%'] }}
-      transition={{
-        duration: 2.4,
-        repeat: Infinity,
-        ease: 'linear',
-        delay,
-      }}
+      transition={{ duration: 2.4, repeat: Infinity, ease: 'linear', delay }}
     />
   </div>
 )
 
-const Home = ({ profile }) => {
-  /* ─── Hero animation variants ─── */
+const Home = () => {
+  /* ══════════ Fetch data from Supabase ══════════ */
+  const { data: profile, loading: loadingProfile } = useProfile()
+  const { data: thmStats, loading: loadingStats } = useThmStats()
+
+  const loading = loadingProfile || loadingStats
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -71,13 +72,32 @@ const Home = ({ profile }) => {
     },
   }
 
+  /* ══════════ Stats — pull from thm_stats table ══════════ */
   const stats = [
-    { from: 0, to: 1, suffix: '%', label: 'TryHackMe Rank', pad: true },
-    { from: 0, to: 225, suffix: '+', label: 'Rooms Completed' },
-    { from: 0, to: 22, suffix: '', label: 'Badges Earned' },
+    {
+      from: 0,
+      to: thmStats?.rank_value
+        ? Math.round(thmStats.rank_value / 1000) // Convert 18911 → 18 (approx)
+        : 1,
+      suffix: '%', // Placeholder — we'll use custom label
+      label: 'TryHackMe Rank',
+      value: thmStats?.percentile || 'Top 1%',
+      useStatic: true, // Show "Top 1%" instead of a number
+    },
+    {
+      from: 0,
+      to: thmStats?.rooms_completed || 0,
+      suffix: '+',
+      label: 'Rooms Completed',
+    },
+    {
+      from: 0,
+      to: thmStats?.badges_count || 0,
+      suffix: '',
+      label: 'Badges Earned',
+    },
   ]
 
-  /* ─── Radar blips ─── */
   const blips = [
     { x: 28, y: 34, delay: 0.5, duration: 3.2 },
     { x: 68, y: 26, delay: 1.4, duration: 3.8 },
@@ -85,6 +105,16 @@ const Home = ({ profile }) => {
     { x: 34, y: 74, delay: 3.5, duration: 4.0 },
     { x: 52, y: 48, delay: 5.0, duration: 3.6 },
   ]
+
+  if (loading) {
+    return (
+      <section className="min-h-screen bg-[#f0f0ef] flex items-center justify-center">
+        <div className="text-[#06b6d4] text-sm font-mono tracking-[0.25em] uppercase animate-pulse">
+          Loading...
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="bg-[#f0f0ef] text-[#111] pt-2 pb-16 px-6 lg:px-12 overflow-x-hidden">
@@ -168,7 +198,7 @@ const Home = ({ profile }) => {
                 <span className="relative inline-flex rounded-full w-1.5 h-1.5 bg-[#06b6d4]" />
               </span>
               <span className="relative text-[10px] font-mono uppercase tracking-[0.25em] text-[#111]">
-                Available for opportunities
+                {profile?.availability_status || 'Available for opportunities'}
               </span>
             </motion.div>
 
@@ -177,7 +207,7 @@ const Home = ({ profile }) => {
               variants={itemVariants}
               className="font-display text-4xl md:text-5xl lg:text-6xl xl:text-[4.5rem] font-black tracking-tighter leading-[0.95]"
             >
-              Adonay's{' '}
+              {profile?.full_name?.split(' ')[0] || 'Adonay'}'s{' '}
               <span className="relative block">
                 <span
                   style={{
@@ -215,11 +245,8 @@ const Home = ({ profile }) => {
               </span>
             </motion.h1>
 
-            {/* Bio — glowing left border */}
-            <motion.div
-              variants={itemVariants}
-              className="relative max-w-lg"
-            >
+            {/* Bio */}
+            <motion.div variants={itemVariants} className="relative max-w-lg">
               <div
                 className="absolute left-0 top-1 bottom-1 w-[2px] rounded-full"
                 style={{
@@ -229,43 +256,39 @@ const Home = ({ profile }) => {
                 }}
               />
               <p className="pl-5 text-[15px] leading-[1.8] text-gray-700 font-light">
-                {profile?.bio ||
+                {profile?.tagline ||
                   'Cybersecurity professional passionate about Vulnerability Assessment and Penetration Testing, application security, and DevSecOps.'}
               </p>
             </motion.div>
 
-            {/* CTAs — enhanced hover */}
-            <motion.div
-              variants={itemVariants}
-              className="flex flex-wrap gap-3 pt-1"
-            >
+            {/* CTAs */}
+            <motion.div variants={itemVariants} className="flex flex-wrap gap-3 pt-1">
               <Link
                 to="/projects"
-                className="group relative inline-flex items-center gap-2 px-5 py-3 bg-[#111] text-[#f0f0ef] text-[10px] font-mono uppercase tracking-widest rounded-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+                className="group relative inline-flex items-center gap-2 px-6 py-3.5 text-[#f0f0ef] text-[10px] font-mono uppercase tracking-widest rounded-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+                style={{
+                  background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
+                  boxShadow:
+                    'inset 0 1px 0 rgba(255,255,255,0.1), 0 1px 2px rgba(0,0,0,0.4)',
+                }}
               >
                 <span
-                  className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
                   style={{
                     boxShadow:
-                      '0 12px 30px -8px rgba(6,182,212,0.6), 0 0 0 1px rgba(6,182,212,0.4)',
+                      '0 15px 40px -10px rgba(6,182,212,0.55), 0 0 0 1px rgba(6,182,212,0.35)',
                   }}
                 />
                 <motion.span
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100"
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none"
                   style={{
                     background:
-                      'linear-gradient(90deg, transparent 0%, rgba(6,182,212,0.3) 50%, transparent 100%)',
+                      'linear-gradient(90deg, transparent 0%, rgba(6,182,212,0.4) 50%, transparent 100%)',
                     backgroundSize: '60% 100%',
                     backgroundRepeat: 'no-repeat',
                   }}
-                  animate={{
-                    backgroundPosition: ['-60% 0%', '160% 0%'],
-                  }}
-                  transition={{
-                    duration: 1.6,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
+                  animate={{ backgroundPosition: ['-60% 0%', '160% 0%'] }}
+                  transition={{ duration: 1.8, repeat: Infinity, ease: 'linear' }}
                 />
                 <span className="relative z-10">View Projects</span>
                 <ArrowRight className="relative z-10 w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -273,38 +296,71 @@ const Home = ({ profile }) => {
 
               <Link
                 to="/contact"
-                className="group relative inline-flex items-center gap-2 px-5 py-3 border border-[#111] text-[10px] font-mono uppercase tracking-widest rounded-lg hover:bg-[#111] hover:text-[#f0f0ef] transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+                className="group relative inline-flex items-center gap-2 px-6 py-3.5 text-[#111] text-[10px] font-mono uppercase tracking-widest rounded-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden border border-[#111]/15 bg-white/40 backdrop-blur-sm"
               >
                 <span
-                  className="absolute inset-0 bg-[#111] origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300"
+                  className="absolute inset-0 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 pointer-events-none"
+                  style={{
+                    background:
+                      'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
+                  }}
                 />
-                <span className="relative z-10">Contact Me</span>
+                <span
+                  className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                  style={{ boxShadow: '0 0 0 1px rgba(6,182,212,0.35)' }}
+                />
+                <span className="relative z-10 group-hover:text-[#f0f0ef] transition-colors duration-300">
+                  Contact Me
+                </span>
+                <ArrowRight className="relative z-10 w-3.5 h-3.5 text-[#111] group-hover:text-[#06b6d4] opacity-0 group-hover:opacity-100 -ml-2 group-hover:ml-0 group-hover:translate-x-0.5 transition-all duration-300" />
               </Link>
             </motion.div>
 
-            {/* Animated stats bar */}
+            {/* ════ STATS — Dynamic from thm_stats ════ */}
             <motion.div
               variants={itemVariants}
               className="relative grid grid-cols-3 gap-4 pt-6 max-w-lg"
             >
               <GlowDivider delay={0} />
 
-              {stats.map((stat, i) => (
-                <div key={i}>
-                  <p className="font-display text-2xl md:text-3xl font-bold tracking-tight text-[#111]">
-                    {stat.pad && stat.to < 10 ? '0' : ''}
-                    <Counter
-                      from={stat.from}
-                      to={stat.to}
-                      suffix={stat.suffix}
-                      duration={1.6 + i * 0.15}
-                    />
-                  </p>
-                  <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500 mt-1.5">
-                    {stat.label}
-                  </p>
-                </div>
-              ))}
+              {/* Stat 1: Rank (shows text like "Top 1%") */}
+              <div>
+                <p className="font-display text-2xl md:text-3xl font-bold tracking-tight text-[#111]">
+                  {thmStats?.percentile?.replace('Top ', '') || '01%'}
+                </p>
+                <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500 mt-1.5">
+                  TryHackMe Rank
+                </p>
+              </div>
+
+              {/* Stat 2: Rooms (animated counter) */}
+              <div>
+                <p className="font-display text-2xl md:text-3xl font-bold tracking-tight text-[#111]">
+                  <Counter
+                    from={0}
+                    to={thmStats?.rooms_completed || 0}
+                    suffix="+"
+                    duration={1.6}
+                  />
+                </p>
+                <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500 mt-1.5">
+                  Rooms Completed
+                </p>
+              </div>
+
+              {/* Stat 3: Badges (animated counter) */}
+              <div>
+                <p className="font-display text-2xl md:text-3xl font-bold tracking-tight text-[#111]">
+                  <Counter
+                    from={0}
+                    to={thmStats?.badges_count || 0}
+                    duration={1.75}
+                  />
+                </p>
+                <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500 mt-1.5">
+                  Badges Earned
+                </p>
+              </div>
             </motion.div>
           </div>
 
@@ -314,18 +370,13 @@ const Home = ({ profile }) => {
             className="lg:col-span-6 relative hidden lg:flex items-center justify-center"
           >
             <div className="relative aspect-square w-full max-w-[420px]">
-
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="relative w-full h-full flex items-center justify-center">
-
                   {[100, 75, 50, 25].map((size, i) => (
                     <div
                       key={i}
                       className="absolute rounded-full border border-[#06b6d4]/20"
-                      style={{
-                        width: `${size}%`,
-                        height: `${size}%`,
-                      }}
+                      style={{ width: `${size}%`, height: `${size}%` }}
                     />
                   ))}
 
@@ -341,11 +392,7 @@ const Home = ({ profile }) => {
                         'conic-gradient(from 0deg, rgba(6,182,212,0.4) 0deg, rgba(6,182,212,0.1) 40deg, transparent 90deg, transparent 360deg)',
                     }}
                     animate={{ rotate: 360 }}
-                    transition={{
-                      duration: 4,
-                      repeat: Infinity,
-                      ease: 'linear',
-                    }}
+                    transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
                   />
 
                   <motion.div
@@ -356,11 +403,7 @@ const Home = ({ profile }) => {
                       boxShadow: '0 0 12px rgba(6,182,212,0.9)',
                     }}
                     animate={{ rotate: 360 }}
-                    transition={{
-                      duration: 4,
-                      repeat: Infinity,
-                      ease: 'linear',
-                    }}
+                    transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
                   />
 
                   <div className="absolute w-2 h-2 rounded-full bg-[#06b6d4] shadow-[0_0_20px_rgba(6,182,212,0.9)]" />
@@ -435,11 +478,10 @@ const Home = ({ profile }) => {
                 <div className="bg-[#111] text-[#f0f0ef] rounded-full px-3.5 py-1.5 flex items-center gap-2 shadow-[0_15px_40px_-15px_rgba(0,0,0,0.5)]">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#06b6d4] shadow-[0_0_8px_rgba(6,182,212,0.9)]" />
                   <span className="text-[9px] font-mono uppercase tracking-[0.2em]">
-                    Top 1% TryHackMe
+                    {thmStats?.percentile || 'Top 1%'} TryHackMe
                   </span>
                 </div>
               </motion.div>
-
             </div>
           </motion.div>
         </motion.div>
@@ -455,7 +497,7 @@ const Home = ({ profile }) => {
           <GlowDivider delay={0.6} />
 
           {[
-            { label: 'About Me', desc: 'Background & skills', href: '/about' },
+            { label: 'About', desc: 'Background & skills', href: '/about' },
             { label: 'Projects', desc: 'Security & full-stack', href: '/projects' },
             { label: 'Certifications', desc: 'Achievements & badges', href: '/achievements' },
             { label: 'Contact', desc: 'Get in touch', href: '/contact' },

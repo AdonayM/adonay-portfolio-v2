@@ -10,119 +10,48 @@ import {
   Briefcase,
   MapPin,
 } from 'lucide-react'
+import {
+  useProfile,
+  useEducation,
+  useSkills,
+  useExperience,
+} from '../lib/hooks'
+
+/* Map icon names from DB → actual lucide components */
+const iconMap = {
+  shield: Shield,
+  globe: Globe,
+  code: Code,
+  factory: Factory,
+  'file-text': FileText,
+  award: Award,
+  briefcase: Briefcase,
+}
 
 const About = () => {
-  /* ─── Bio ─── */
-  const bioParagraphs = [
-    "Hello! I'm Adonay Mussie, a cybersecurity professional passionate about Vulnerability Assessment and Penetration Testing, application security, and DevSecOps. I have hands-on experience testing web applications and APIs, performing vulnerability assessments, and analyzing source code to identify security weaknesses.",
-    'I enjoy exploring how systems work, finding vulnerabilities, and developing security-focused projects to strengthen my practical skills. Through professional experience, certifications, and hands-on platforms such as TryHackMe, I continue to expand my knowledge of cybersecurity, networking, and secure software development.',
-    'My goal is to grow into a well-rounded cybersecurity professional and contribute to building more secure applications, systems, and organizations.',
-  ]
+  const { data: profile, loading: loadingProfile } = useProfile()
+  const { data: education, loading: loadingEdu } = useEducation()
+  const { data: skills, loading: loadingSkills } = useSkills()
+  const { data: experience, loading: loadingExp } = useExperience()
 
-  /* ─── Education ─── */
-  const education = [
-    {
-      institution: 'SeGoMe Academy',
-      degree: 'KG – 1',
-      period: 'Foundation',
-      cgpa: null,
-    },
-    {
-      institution: 'Abune MelkeTsedek Academy',
-      degree: 'Elementary [Grade 2 – 10]',
-      period: 'Foundation',
-      cgpa: null,
-    },
-    {
-      institution: 'Yaberus General Sec & Pre',
-      degree: 'Preparatory [Grade 11 – 12]',
-      period: 'Completed',
-      cgpa: null,
-    },
-    {
-      institution: 'Bahirdar University',
-      degree: 'Bachelor of Computer Engineering',
-      period: '2022 – 2026',
-      cgpa: '3.68 / 4.0',
-    },
-    {
-      institution: 'Bahirdar University',
-      degree: 'Bachelor of Management',
-      period: '2021 – 2025',
-      cgpa: '3.20 / 4.0',
-    },
-  ]
+  const loading =
+    loadingProfile || loadingEdu || loadingSkills || loadingExp
 
-  /* ─── Skills (with hover descriptions) ─── */
-  const skills = [
-    {
-      name: 'Penetration Testing',
-      icon: Shield,
-      color: '#06b6d4',
-      level: 'Advanced',
-      description: 'More than 100 websites and APIs penetration tested.',
-    },
-    {
-      name: 'Computer Network',
-      icon: Globe,
-      color: '#a855f7',
-      level: 'Advanced',
-      description: 'CISCO ITN certified — routing, switching, protocols.',
-    },
-    {
-      name: 'Web Development',
-      icon: Code,
-      color: '#2563eb',
-      level: 'Intermediate',
-      description: 'CTF-based and daily-used websites developed.',
-    },
-    {
-      name: 'Manufacturing Mgmt.',
-      icon: Factory,
-      color: '#10b981',
-      level: 'Intermediate',
-      description: 'Kayak boat development experience.',
-    },
-    {
-      name: 'SharePoint Documentation',
-      icon: FileText,
-      color: '#f59e0b',
-      level: 'Advanced',
-      description: 'Enterprise documentation & knowledge base management.',
-    },
-  ]
+  /* ─── Loading state ─── */
+  if (loading) {
+    return (
+      <section className="min-h-screen bg-[#f0f0ef] flex items-center justify-center">
+        <div className="text-[#06b6d4] text-sm font-mono tracking-[0.25em] uppercase animate-pulse">
+          Loading about...
+        </div>
+      </section>
+    )
+  }
 
-  /* ─── Experience (INSA corrected) ─── */
-  const experience = [
-    {
-      company: 'CBE IS Security',
-      role: 'Vulnerability Assessment & Penetration Testing',
-      focus: 'Application & DevSecOps Security',
-      period: '2024 – Present',
-      location: 'Addis Ababa, Ethiopia',
-      description:
-        'Conducted vulnerability assessments, performed penetration testing on web applications and APIs, and analyzed source code to identify security weaknesses.',
-      highlights: [
-        'Web app & API security testing',
-        'Source code review',
-        'DevSecOps pipeline integration',
-        'Vulnerability reporting',
-      ],
-    },
-    {
-      company: 'INSA',
-      role: 'Penetration Testing Intern',
-      focus: 'Cyber Audit Division',
-      period: '2023',
-      location: 'Addis Ababa, Ethiopia',
-      description:
-        'Focused on penetration testing within the Cyber Audit Division — assessing systems, identifying vulnerabilities, and documenting security findings for internal audits.',
-      highlights: [
-        'Penetration testing engagements',
-        'Security finding documentation',
-      ],
-    },
-  ]
+  const bioParagraphs = profile?.bio_paragraphs || []
+  const educationList = education || []
+  const skillsList = skills || []
+  const experienceList = experience || []
 
   /* ══════════ ANIMATION VARIANTS ══════════ */
   const paragraphVariants = {
@@ -131,7 +60,11 @@ const About = () => {
       opacity: 1,
       y: 0,
       filter: 'blur(0px)',
-      transition: { duration: 0.9, delay: i * 0.2, ease: [0.22, 1, 0.36, 1] },
+      transition: {
+        duration: 0.9,
+        delay: i * 0.2,
+        ease: [0.22, 1, 0.36, 1],
+      },
     }),
   }
 
@@ -217,12 +150,12 @@ const About = () => {
                   // 01. About Me
                 </p>
                 <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
-                  Hello, I'm Adonay.
+                  Hello, I'm {profile?.full_name?.split(' ')[0] || 'Adonay'}.
                 </h2>
               </motion.div>
 
               <div className="relative">
-                {/* Profile card */}
+                {/* Floating profile card */}
                 <motion.div
                   variants={cardVariants}
                   initial="hidden"
@@ -243,53 +176,34 @@ const About = () => {
                     whileHover={{ y: -8, scale: 1.02 }}
                     className="bg-white border border-black/10 rounded-xl p-4"
                   >
-                    <div className="aspect-square rounded-lg mb-3 relative overflow-hidden">
-  {/* Your photo */}
-  <img
-    src="/profile/adonay.jpg"
-    alt="Adonay Mussie"
-    className="w-full h-full object-cover"
-  />
-
-  {/* Shimmer overlay on top of the photo */}
-  <motion.div
-    className="absolute inset-0 pointer-events-none"
-    style={{
-      background:
-        'linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
-      backgroundSize: '200% 200%',
-    }}
-    animate={{ backgroundPosition: ['-100% 0%', '200% 0%'] }}
-    transition={{
-      duration: 3.5,
-      repeat: Infinity,
-      ease: 'easeInOut',
-      repeatDelay: 2,
-    }}
-  />
-
-  {/* Subtle gradient tint for the cyber vibe */}
-  <div
-    className="absolute inset-0 pointer-events-none"
-    style={{
-      background:
-        'linear-gradient(135deg, rgba(6,182,212,0.15) 0%, rgba(168,85,247,0.15) 100%)',
-      mixBlendMode: 'overlay',
-    }}
-  />
-</div>
-
+                    <div className="aspect-square rounded-lg overflow-hidden mb-3 relative">
+                      {profile?.photo_url ? (
+                        <img
+                          src={profile.photo_url}
+                          alt={profile.full_name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-[#06b6d4]/20 to-[#a855f7]/20 flex items-center justify-center">
+                          <span className="font-display text-4xl font-bold text-[#111]">
+                            {profile?.full_name?.charAt(0) || 'A'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                     <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-3 h-3 text-[#06b6d4] shrink-0" />
-                        <span className="text-[10px] font-mono text-gray-600 truncate">
-                          Ethiopia
-                        </span>
-                      </div>
+                      {profile?.location && (
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-3 h-3 text-[#06b6d4] shrink-0" />
+                          <span className="text-[10px] font-mono text-gray-600 truncate">
+                            {profile.location}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-2">
                         <Shield className="w-3 h-3 text-[#06b6d4] shrink-0" />
                         <span className="text-[10px] font-mono text-gray-600 truncate">
-                          DevSecOps Security
+                          VAPT / DevSecOps
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -337,7 +251,6 @@ const About = () => {
                 <h2 className="font-display text-2xl md:text-3xl font-bold tracking-tight">
                   Academic Background
                 </h2>
-
                 <div className="mt-4 h-[2px] w-16 bg-gradient-to-r from-[#06b6d4] to-[#a855f7]" />
               </motion.div>
 
@@ -354,9 +267,9 @@ const About = () => {
                   }}
                 />
 
-                {education.map((edu, i) => (
+                {educationList.map((edu, i) => (
                   <motion.div
-                    key={i}
+                    key={edu.id}
                     initial={{ opacity: 0, x: 15 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
@@ -386,11 +299,9 @@ const About = () => {
                       <p className="text-[9px] font-mono font-bold uppercase tracking-[0.18em] text-[#06b6d4] mb-1">
                         {edu.period}
                       </p>
-
                       <h3 className="font-display text-[14px] font-bold text-[#111] leading-tight group-hover:text-[#06b6d4] transition-colors">
                         {edu.institution}
                       </h3>
-
                       <p className="text-[11px] text-gray-600 mt-0.5 leading-snug">
                         {edu.degree}
                         {edu.cgpa && (
@@ -411,7 +322,7 @@ const About = () => {
         <section className="mb-8">
           <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-start">
 
-            {/* ════ LEFT: SKILLS ════ */}
+            {/* ════ LEFT: Skills ════ */}
             <div className="lg:col-span-5">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -426,16 +337,15 @@ const About = () => {
                 <h2 className="font-display text-2xl md:text-3xl font-bold tracking-tight">
                   What I Bring to the Table
                 </h2>
-
                 <div className="mt-4 h-[2px] w-16 bg-gradient-to-r from-[#06b6d4] to-[#a855f7]" />
               </motion.div>
 
               <div className="space-y-3">
-                {skills.map((skill, i) => {
-                  const Icon = skill.icon
+                {skillsList.map((skill, i) => {
+                  const Icon = iconMap[skill.icon_name] || Shield
                   return (
                     <motion.div
-                      key={skill.name}
+                      key={skill.id}
                       initial={{ opacity: 0, x: -20 }}
                       whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true }}
@@ -474,34 +384,36 @@ const About = () => {
                         />
                       </div>
 
-                      {/* HOVER TOOLTIP */}
-                      <div
-                        className="pointer-events-none absolute left-0 right-0 -bottom-1 translate-y-full opacity-0 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-20"
-                        style={{ transitionDelay: '50ms' }}
-                      >
+                      {/* Hover tooltip */}
+                      {skill.hover_description && (
                         <div
-                          className="mt-2 mx-2 bg-[#111] text-white text-[11px] leading-snug rounded-lg px-3 py-2 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] border border-white/10 flex items-start gap-2"
-                          style={{
-                            boxShadow: `0 10px 30px -10px rgba(0,0,0,0.5), 0 0 0 1px ${skill.color}30`,
-                          }}
+                          className="pointer-events-none absolute left-0 right-0 -bottom-1 translate-y-full opacity-0 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-20"
+                          style={{ transitionDelay: '50ms' }}
                         >
                           <div
-                            className="w-1 h-1 rounded-full mt-1.5 shrink-0"
+                            className="mt-2 mx-2 bg-[#111] text-white text-[11px] leading-snug rounded-lg px-3 py-2 border border-white/10 flex items-start gap-2"
                             style={{
-                              backgroundColor: skill.color,
-                              boxShadow: `0 0 6px ${skill.color}`,
+                              boxShadow: `0 10px 30px -10px rgba(0,0,0,0.5), 0 0 0 1px ${skill.color}30`,
                             }}
-                          />
-                          <span className="flex-1">{skill.description}</span>
+                          >
+                            <div
+                              className="w-1 h-1 rounded-full mt-1.5 shrink-0"
+                              style={{
+                                backgroundColor: skill.color,
+                                boxShadow: `0 0 6px ${skill.color}`,
+                              }}
+                            />
+                            <span className="flex-1">{skill.hover_description}</span>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </motion.div>
                   )
                 })}
               </div>
             </div>
 
-            {/* ════ RIGHT: EXPERIENCE ════ */}
+            {/* ════ RIGHT: Experience ════ */}
             <div className="lg:col-span-7">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -516,14 +428,13 @@ const About = () => {
                 <h2 className="font-display text-2xl md:text-3xl font-bold tracking-tight">
                   Where I've Worked
                 </h2>
-
                 <div className="mt-4 h-[2px] w-16 bg-gradient-to-r from-[#06b6d4] to-[#a855f7]" />
               </motion.div>
 
               <div className="space-y-4">
-                {experience.map((exp, i) => (
+                {experienceList.map((exp, i) => (
                   <motion.div
-                    key={i}
+                    key={exp.id}
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
@@ -534,15 +445,11 @@ const About = () => {
                       <div className="flex items-center gap-2">
                         <Briefcase
                           className="w-3.5 h-3.5 shrink-0"
-                          style={{
-                            color: i === 0 ? '#06b6d4' : '#a855f7',
-                          }}
+                          style={{ color: i === 0 ? '#06b6d4' : '#a855f7' }}
                         />
                         <span
                           className="text-[9px] font-mono uppercase tracking-[0.22em] font-bold"
-                          style={{
-                            color: i === 0 ? '#06b6d4' : '#a855f7',
-                          }}
+                          style={{ color: i === 0 ? '#06b6d4' : '#a855f7' }}
                         >
                           {exp.period}
                         </span>
@@ -572,24 +479,24 @@ const About = () => {
                       {exp.description}
                     </p>
 
-                    <div className="grid sm:grid-cols-2 gap-1.5 pt-3 border-t border-black/10">
-                      {exp.highlights.map((h, j) => (
-                        <div
-                          key={j}
-                          className="flex gap-1.5 text-[12px] text-gray-600 leading-snug"
-                        >
-                          <span
-                            className="shrink-0 mt-0.5 text-[10px]"
-                            style={{
-                              color: i === 0 ? '#06b6d4' : '#a855f7',
-                            }}
+                    {exp.highlights && exp.highlights.length > 0 && (
+                      <div className="grid sm:grid-cols-2 gap-1.5 pt-3 border-t border-black/10">
+                        {exp.highlights.map((h, j) => (
+                          <div
+                            key={j}
+                            className="flex gap-1.5 text-[12px] text-gray-600 leading-snug"
                           >
-                            ▸
-                          </span>
-                          <span>{h}</span>
-                        </div>
-                      ))}
-                    </div>
+                            <span
+                              className="shrink-0 mt-0.5 text-[10px]"
+                              style={{ color: i === 0 ? '#06b6d4' : '#a855f7' }}
+                            >
+                              ▸
+                            </span>
+                            <span>{h}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </motion.div>
                 ))}
               </div>

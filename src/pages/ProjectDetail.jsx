@@ -8,16 +8,19 @@ import {
   Laptop,
   Smartphone,
   Award,
-  Trophy,
   Shield,
-  CheckCircle2,
   Cloud,
   Database,
   Server,
   Code,
   Sparkles,
 } from 'lucide-react'
-import { findSpec } from '../lib/projectSpecs'
+import {
+  useProjects,
+  useProjectDetail,
+  useThmStats,
+  useThmBadges,
+} from '../lib/hooks'
 
 /* Animations */
 const fadeInUp = {
@@ -36,13 +39,30 @@ const staggerChildren = {
 
 const ProjectDetail = () => {
   const { id } = useParams()
-  const spec = findSpec(id)
+  const { data: projects, loading: loadingProjects } = useProjects()
+  const { data: details, loading: loadingDetails } = useProjectDetail(id)
+  const { data: thmStats } = useThmStats()
+  const { data: thmBadges } = useThmBadges()
 
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [id])
 
-  if (!spec) {
+  const loading = loadingProjects || loadingDetails
+
+  if (loading) {
+    return (
+      <section className="min-h-screen bg-[#f0f0ef] flex items-center justify-center">
+        <div className="text-[#06b6d4] text-sm font-mono tracking-[0.25em] uppercase animate-pulse">
+          Loading project...
+        </div>
+      </section>
+    )
+  }
+
+  const project = projects?.find((p) => p.slug === id)
+
+  if (!project) {
     return (
       <section className="min-h-screen bg-[#f0f0ef] flex flex-col items-center justify-center gap-6 px-6">
         <p className="font-display font-bold text-4xl text-center">
@@ -58,8 +78,18 @@ const ProjectDetail = () => {
     )
   }
 
+  /* Merge project + details into one spec object for the layouts */
+  const spec = {
+    ...project,
+    ...(details || {}),
+    slug: project.slug,
+    screenshots: details?.screenshots || [],
+    specs: details?.specs || [],
+    highlights: details?.highlights || [],
+  }
+
   const getIcon = () => {
-    switch (spec.icon) {
+    switch (project.kind) {
       case 'phone':
         return <Smartphone className="w-5 h-5" strokeWidth={1.75} />
       case 'award':
@@ -99,17 +129,16 @@ const ProjectDetail = () => {
             </div>
 
             <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight leading-none">
-              {spec.title}
+              {project.title}
             </h1>
 
-            {spec.subtitle && (
+            {project.subtitle && (
               <p className="font-mono text-[10px] md:text-xs text-gray-500 tracking-[0.2em] uppercase">
-                / {spec.subtitle}
+                / {project.subtitle}
               </p>
             )}
           </motion.div>
 
-          {/* ANIMATED MOVING GRADIENT UNDERLINE */}
           <div className="mt-5 relative h-[2px] w-full overflow-hidden">
             <div
               className="absolute inset-0"
@@ -132,13 +161,15 @@ const ProjectDetail = () => {
           </div>
         </motion.div>
 
-        {/* SPECIAL LAYOUTS */}
-        {spec.slug === 'tryhackme' && <TryHackMeLayout spec={spec} />}
-        {spec.slug === 'expense-tracker' && <ExpenseTrackerLayout spec={spec} />}
-        {['n4yctf', 'n4yadmin', 'n4yvault'].includes(spec.slug) && (
+        {/* LAYOUTS — with fallback for any new project */}
+        {spec.slug === 'tryhackme' ? (
+          <TryHackMeLayout spec={spec} stats={thmStats} badges={thmBadges} />
+        ) : spec.slug === 'expense-tracker' ? (
+          <ExpenseTrackerLayout spec={spec} />
+        ) : ['n4yctf', 'n4yadmin', 'n4yvault'].includes(spec.slug) ? (
           <N4yCaseStudyLayout spec={spec} />
-        )}
-        {['clearance-mrs', 'legal-connect'].includes(spec.slug) && (
+        ) : (
+          /* Default layout — used for clearance-mrs, legal-connect, and any new project */
           <StandardLayout spec={spec} />
         )}
       </div>
@@ -179,9 +210,7 @@ const N4yCaseStudyLayout = ({ spec }) => {
   return (
     <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
 
-      {/* LEFT COLUMN — screenshots + cards */}
       <div className="space-y-6">
-
         {spec.screenshots && spec.screenshots[0] && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -255,7 +284,7 @@ const N4yCaseStudyLayout = ({ spec }) => {
             <div className="space-y-3">
               {spec.specs.map((row, i) => (
                 <motion.div
-                  key={row.label}
+                  key={i}
                   initial={{ opacity: 0, y: 8 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -278,9 +307,7 @@ const N4yCaseStudyLayout = ({ spec }) => {
         )}
       </div>
 
-      {/* RIGHT COLUMN — prose + takeaway + links */}
       <div className="space-y-6 lg:pt-4">
-
         {spec.tagline && (
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -351,17 +378,19 @@ const N4yCaseStudyLayout = ({ spec }) => {
           transition={{ duration: 0.6, delay: 0.25 }}
           className="flex flex-wrap gap-2 pt-2"
         >
-          <a
-            href="https://github.com/AdonayM"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest px-4 py-3 border border-[#111] rounded-lg hover:bg-[#111] hover:text-[#f0f0ef] transition-all hover:-translate-y-0.5"
-          >
-            View Source
-          </a>
-          {spec.slug === 'n4yctf' && (
+          {spec.github_url && (
             <a
-              href="https://n4y-ctf-one.vercel.app"
+              href={spec.github_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest px-4 py-3 border border-[#111] rounded-lg hover:bg-[#111] hover:text-[#f0f0ef] transition-all hover:-translate-y-0.5"
+            >
+              View Source
+            </a>
+          )}
+          {spec.live_url && (
+            <a
+              href={spec.live_url}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest px-4 py-3 bg-[#111] text-[#f0f0ef] rounded-lg hover:bg-gray-800 transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-10px_rgba(6,182,212,0.6)]"
@@ -377,14 +406,41 @@ const N4yCaseStudyLayout = ({ spec }) => {
 
 /* ============================================================ */
 /* STANDARD LAYOUT — screenshots left, prose right               */
-/* Used for: Clearance MRS, Legal Connect                        */
+/* Used for clearance-mrs, legal-connect, and ANY new project    */
 /* ============================================================ */
 const StandardLayout = ({ spec }) => {
+  const hasAnyContent =
+    spec.tagline ||
+    spec.intro ||
+    spec.challenge ||
+    spec.build ||
+    spec.takeaway ||
+    (spec.highlights && spec.highlights.length > 0) ||
+    (spec.specs && spec.specs.length > 0) ||
+    (spec.screenshots && spec.screenshots.length > 0)
+
   return (
     <div className="space-y-20">
       <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
 
+        {/* ════ LEFT COLUMN — screenshots or placeholder ════ */}
         <div className="lg:col-span-7 space-y-8">
+
+          {/* Placeholder if no screenshots */}
+          {(!spec.screenshots || spec.screenshots.length === 0) && (
+            <div className="bg-white border border-dashed border-black/20 rounded-xl p-16 flex flex-col items-center justify-center gap-3 min-h-[300px]">
+              <div className="w-14 h-14 rounded-full bg-[#06b6d4]/10 border border-[#06b6d4]/30 flex items-center justify-center">
+                <Laptop className="w-6 h-6 text-[#06b6d4]" strokeWidth={1.75} />
+              </div>
+              <p className="text-sm font-mono text-gray-500 uppercase tracking-widest mt-2">
+                No screenshots added yet
+              </p>
+              <p className="text-[11px] text-gray-400 font-mono">
+                Add one from the admin panel → Projects
+              </p>
+            </div>
+          )}
+
           {spec.screenshots && spec.screenshots[0] && (
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -414,7 +470,19 @@ const StandardLayout = ({ spec }) => {
           )}
         </div>
 
+        {/* ════ RIGHT COLUMN — prose ════ */}
         <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-8">
+
+          {!hasAnyContent && (
+            <div className="bg-white border border-dashed border-black/20 rounded-xl p-8 text-center">
+              <p className="text-sm font-mono text-gray-500 uppercase tracking-widest">
+                No case study content yet
+              </p>
+              <p className="text-[11px] text-gray-400 font-mono mt-2">
+                Fill it in from the admin panel
+              </p>
+            </div>
+          )}
 
           {spec.tagline && (
             <motion.p
@@ -512,7 +580,7 @@ const StandardLayout = ({ spec }) => {
               <div className="space-y-3">
                 {spec.specs.map((row, i) => (
                   <motion.div
-                    key={row.label}
+                    key={i}
                     initial={{ opacity: 0, y: 8 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
@@ -547,7 +615,7 @@ const StandardLayout = ({ spec }) => {
               <div className="grid grid-cols-2 gap-3">
                 {spec.framework.map((f, i) => (
                   <motion.div
-                    key={f}
+                    key={i}
                     initial={{ opacity: 0, y: 10 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
@@ -573,22 +641,36 @@ const StandardLayout = ({ spec }) => {
             </motion.p>
           )}
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="flex flex-wrap gap-2 pt-2"
-          >
-            <a
-              href="https://github.com/AdonayM"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest px-4 py-3 border border-[#111] rounded-lg hover:bg-[#111] hover:text-[#f0f0ef] transition-all hover:-translate-y-0.5"
+          {(spec.github_url || spec.live_url) && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="flex flex-wrap gap-2 pt-2"
             >
-              View Source
-            </a>
-          </motion.div>
+              {spec.github_url && (
+                <a
+                  href={spec.github_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest px-4 py-3 border border-[#111] rounded-lg hover:bg-[#111] hover:text-[#f0f0ef] transition-all hover:-translate-y-0.5"
+                >
+                  View Source
+                </a>
+              )}
+              {spec.live_url && (
+                <a
+                  href={spec.live_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest px-4 py-3 bg-[#111] text-[#f0f0ef] rounded-lg hover:bg-gray-800 transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-10px_rgba(6,182,212,0.6)]"
+                >
+                  Live Demo <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </motion.div>
+          )}
         </div>
       </div>
     </div>
@@ -599,9 +681,9 @@ const StandardLayout = ({ spec }) => {
 /* EXPENSE TRACKER LAYOUT                                        */
 /* ============================================================ */
 const ExpenseTrackerLayout = ({ spec }) => {
-  const hasVideo = spec.videos && spec.videos.length > 0
-  const videoSrc = hasVideo ? spec.videos[0] : null
-  const screenshotSrc = spec.screenshots[0]
+  const hasVideo = !!spec.video_url
+  const videoSrc = hasVideo ? spec.video_url : null
+  const screenshotSrc = spec.screenshots?.[0]
 
   return (
     <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
@@ -616,7 +698,7 @@ const ExpenseTrackerLayout = ({ spec }) => {
         >
           <div className="w-full max-w-[280px]">
             <PhoneCard
-              src={videoSrc || spec.screenshots[0]}
+              src={videoSrc || screenshotSrc}
               alt="Expense Tracker demo"
               isVideo={hasVideo}
             />
@@ -654,7 +736,7 @@ const ExpenseTrackerLayout = ({ spec }) => {
           </motion.div>
         )}
 
-        {spec.techStack && spec.techStack.length > 0 && (
+        {spec.tech_stack_detail && spec.tech_stack_detail.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -666,7 +748,7 @@ const ExpenseTrackerLayout = ({ spec }) => {
               Tech Stack
             </p>
             <ul className="space-y-2.5">
-              {spec.techStack.map((t, i) => (
+              {spec.tech_stack_detail.map((t, i) => (
                 <motion.li
                   key={i}
                   initial={{ opacity: 0, x: -8 }}
@@ -750,63 +832,62 @@ const ExpenseTrackerLayout = ({ spec }) => {
           </motion.p>
         )}
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.25 }}
-          className="flex justify-center pt-2"
-        >
-          <div className="w-full max-w-[320px]">
-            <ScreenshotCard
-              src={screenshotSrc}
-              alt="Expense Tracker preview"
-            />
-          </div>
-        </motion.div>
+        {screenshotSrc && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.25 }}
+            className="flex justify-center pt-2"
+          >
+            <div className="w-full max-w-[320px]">
+              <ScreenshotCard
+                src={screenshotSrc}
+                alt="Expense Tracker preview"
+              />
+            </div>
+          </motion.div>
+        )}
       </div>
     </div>
   )
 }
 
 /* ============================================================ */
-/* TRYHACKME LAYOUT — stats + all 22 badges                      */
+/* TRYHACKME LAYOUT — stats + badges from DB                     */
 /* ============================================================ */
-const TryHackMeLayout = ({ spec }) => {
-  const stats = [
-    { value: '18,911', label: 'Global Rank', accent: '#06b6d4' },
-    { value: 'Top 1%', label: 'Percentile', accent: '#a855f7' },
-    { value: '237', label: 'Rooms Completed', accent: '#2563eb' },
-    { value: '22', label: 'Badges Earned', accent: '#10b981' },
-    { value: '77', label: 'Day Streak', accent: '#f59e0b' },
+const TryHackMeLayout = ({ spec, stats, badges }) => {
+  const statCards = [
+    {
+      value: stats?.rank_value?.toLocaleString() || '—',
+      label: 'Global Rank',
+      accent: '#06b6d4',
+    },
+    {
+      value: stats?.percentile || '—',
+      label: 'Percentile',
+      accent: '#a855f7',
+    },
+    {
+      value: stats?.rooms_completed?.toString() || '—',
+      label: 'Rooms Completed',
+      accent: '#2563eb',
+    },
+    {
+      value: stats?.badges_count?.toString() || '—',
+      label: 'Badges Earned',
+      accent: '#10b981',
+    },
+    {
+      value: stats?.streak_days?.toString() || '—',
+      label: 'Day Streak',
+      accent: '#f59e0b',
+    },
   ]
 
-  const badges = [
-    { name: 'First Four', desc: 'Completing four rooms in your first week of joining!', rarity: 'Common: 30.9%', color: '#a855f7' },
-    { name: '3 Day Streak', desc: 'Achieving a 3 day hacking streak', rarity: 'Common: 33%', color: '#10b981' },
-    { name: 'cat linux.txt', desc: 'Being competent in Linux', rarity: 'Common: 21%', color: '#f59e0b' },
-    { name: 'OhSINT', desc: 'Completing the OhSINT room', rarity: 'Rare: 4.6%', color: '#2563eb' },
-    { name: 'Silver League', desc: 'Silver League 1st place', rarity: 'Rare: 2.5%', color: '#94a3b8' },
-    { name: 'Webbed', desc: 'Understands how the world wide web works', rarity: 'Common: 18.5%', color: '#6b7280' },
-    { name: 'World Wide Web', desc: "Completing the 'How The Web Works' module", rarity: 'Common: 16%', color: '#06b6d4' },
-    { name: 'Sapphire League', desc: 'Sapphire League 1st place', rarity: 'Epic: 0.9%', color: '#2563eb' },
-    { name: 'Session Held', desc: 'Completing 4 weekly missions in a row!', rarity: 'Rare: 4.7%', color: '#06b6d4' },
-    { name: 'Introduction to Security Engineering', desc: 'Completed the Security Engineer Intro room!', rarity: 'Rare: 4.8%', color: '#0ea5e9' },
-    { name: 'OWASP Top 10', desc: 'Understanding every OWASP vulnerability', rarity: 'Rare: 8%', color: '#eab308' },
-    { name: 'Bronze League', desc: 'Bronze League 1st place', rarity: 'Rare: 6.1%', color: '#a16207' },
-    { name: '7 Day Streak', desc: 'Achieving a 7 day hacking streak', rarity: 'Common: 20.1%', color: '#10b981' },
-    { name: 'Cyber Ready', desc: 'Understanding impact of training on teams', rarity: 'Rare: 6.8%', color: '#eab308' },
-    { name: 'Blue', desc: 'Hacking into Windows via EternalBlue', rarity: 'Rare: 9.6%', color: '#2563eb' },
-    { name: 'Defrosted Five', desc: 'Completing AoC Side Quest 2024!', rarity: 'Epic: 0.3%', color: '#a855f7' },
-    { name: '3 Million Legend', desc: 'Was a legend and solved any room in the 3 Million Users Special Module!', rarity: 'Rare: 1.5%', color: '#10b981' },
-    { name: 'SOC Level-Up', desc: 'Begin your journey as a SOC L2 analyst', rarity: 'Rare: 1.3%', color: '#0ea5e9' },
-    { name: '30 Day Streak', desc: 'Hacking for 30 days solid', rarity: 'Rare: 9.6%', color: '#dc2626' },
-    { name: 'The Return of the Yeti', desc: 'Completed at least one Advent of Cyber 2023 Side Quest Challenge!', rarity: 'Epic: 0.6%', color: '#2563eb' },
-    { name: 'Advent of Cyber 2025', desc: 'Completing Advent of Cyber 2025!', rarity: 'Rare: 2.6%', color: '#f59e0b' },
-    { name: 'Hash Cracker', desc: 'Cracking all those hashes', rarity: 'Rare: 4.2%', color: '#7c3aed' },
-  ]
+  const badgeList = badges || []
 
-  const rarityColor = (rarity) => {
+  const rarityColor = (rarity = '') => {
     if (rarity.startsWith('Epic')) return '#a855f7'
     if (rarity.startsWith('Rare')) return '#06b6d4'
     if (rarity.startsWith('Common')) return '#6b7280'
@@ -816,7 +897,6 @@ const TryHackMeLayout = ({ spec }) => {
   return (
     <div className="space-y-16">
 
-      {/* Stage 1 — Prose + Stats */}
       <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-start">
         <div className="lg:col-span-7 space-y-5">
           {spec.tagline && (
@@ -882,28 +962,30 @@ const TryHackMeLayout = ({ spec }) => {
             </motion.p>
           )}
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.25 }}
-            className="pt-2"
-          >
-            <a
-              href="https://tryhackme.com/p/4d0n4y"
-              target="_blank"
-              rel="noreferrer"
-              className="group inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest px-5 py-3.5 bg-[#111] text-[#f0f0ef] rounded-lg hover:bg-gray-800 transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-10px_rgba(6,182,212,0.6)]"
+          {stats?.profile_url && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.25 }}
+              className="pt-2"
             >
-              View Full Profile on TryHackMe
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          </motion.div>
+              <a
+                href={stats.profile_url}
+                target="_blank"
+                rel="noreferrer"
+                className="group inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest px-5 py-3.5 bg-[#111] text-[#f0f0ef] rounded-lg hover:bg-gray-800 transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-10px_rgba(6,182,212,0.6)]"
+              >
+                View Full Profile on TryHackMe
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </motion.div>
+          )}
         </div>
 
         <div className="lg:col-span-5">
           <div className="grid grid-cols-2 gap-3">
-            {stats.map((stat, i) => (
+            {statCards.map((stat, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
@@ -931,66 +1013,67 @@ const TryHackMeLayout = ({ spec }) => {
         </div>
       </div>
 
-      {/* Stage 2 — Badges grid */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.7 }}
-      >
-        <div className="mb-6">
-          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-2">
-            // Badge Collection
-          </p>
-          <h2 className="font-display text-2xl md:text-3xl font-bold tracking-tight">
-            All 22 Badges Earned
-          </h2>
-          <div className="mt-4 h-[2px] w-16 bg-gradient-to-r from-[#06b6d4] to-[#a855f7]" />
-        </div>
+      {badgeList.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+        >
+          <div className="mb-6">
+            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-2">
+              // Badge Collection
+            </p>
+            <h2 className="font-display text-2xl md:text-3xl font-bold tracking-tight">
+              All {badgeList.length} Badges Earned
+            </h2>
+            <div className="mt-4 h-[2px] w-16 bg-gradient-to-r from-[#06b6d4] to-[#a855f7]" />
+          </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {badges.map((badge, i) => (
-            <motion.div
-              key={badge.name}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.03 }}
-              className="group bg-white border border-black/10 rounded-xl p-4 hover:border-black/30 hover:shadow-[0_15px_40px_-20px_rgba(0,0,0,0.25)] hover:-translate-y-0.5 transition-all"
-            >
-              <div className="flex items-start gap-3">
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 font-display font-bold text-[13px] text-white"
-                  style={{
-                    backgroundColor: badge.color,
-                    boxShadow: `0 4px 12px ${badge.color}40`,
-                  }}
-                >
-                  {badge.name.charAt(0).toUpperCase()}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-[13px] text-[#111] leading-tight mb-1">
-                    {badge.name}
-                  </p>
-                  <p className="text-[11px] text-gray-600 leading-snug mb-2">
-                    {badge.desc}
-                  </p>
-                  <span
-                    className="inline-block text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded"
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            {badgeList.map((badge, i) => (
+              <motion.div
+                key={badge.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.03 }}
+                className="group bg-white border border-black/10 rounded-xl p-3 hover:border-black/30 hover:shadow-[0_15px_40px_-20px_rgba(0,0,0,0.25)] hover:-translate-y-0.5 transition-all"
+              >
+                <div className="flex items-start gap-2.5">
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 font-display font-bold text-[13px] text-white"
                     style={{
-                      backgroundColor: `${rarityColor(badge.rarity)}15`,
-                      color: rarityColor(badge.rarity),
+                      backgroundColor: badge.color,
+                      boxShadow: `0 4px 12px ${badge.color}40`,
                     }}
                   >
-                    {badge.rarity}
-                  </span>
+                    {badge.name.charAt(0).toUpperCase()}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-[13px] text-[#111] leading-tight mb-1">
+                      {badge.name}
+                    </p>
+                    <p className="text-[11px] text-gray-600 leading-snug mb-2">
+                      {badge.description}
+                    </p>
+                    <span
+                      className="inline-block text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded"
+                      style={{
+                        backgroundColor: `${rarityColor(badge.rarity)}15`,
+                        color: rarityColor(badge.rarity),
+                      }}
+                    >
+                      {badge.rarity}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
     </div>
   )
 }

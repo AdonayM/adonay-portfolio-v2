@@ -6,9 +6,14 @@ import {
   Send,
   ArrowUpRight,
   MessageCircle,
+  MapPin,
 } from 'lucide-react'
+import { useProfile } from '../lib/hooks'
 
-const Contact = ({ profile }) => {
+const Contact = () => {
+  /* Fetch profile from Supabase */
+  const { data: profile, loading } = useProfile()
+
   /* ─── Inline SVG icons ─── */
   const GithubIcon = ({ className }) => (
     <svg
@@ -36,70 +41,84 @@ const Contact = ({ profile }) => {
     </svg>
   )
 
-  /* ─── Contact channels ─── */
+  /* Helper — extract hostname for nice display */
+  const formatUrl = (url) => {
+    if (!url) return ''
+    return url.replace(/^https?:\/\//, '').replace(/\/$/, '')
+  }
+
+  /* Build the contact channels dynamically */
   const contactChannels = [
-    {
+    profile?.email && {
       label: 'Email',
-      value: profile?.email || 'adonayneamn@gmail.com',
-      href: `mailto:${profile?.email || 'adonayneamn@gmail.com'}`,
+      value: profile.email,
+      href: `mailto:${profile.email}`,
       icon: Mail,
       color: '#06b6d4',
       hint: 'Drop me a message',
     },
-    {
+    profile?.phone && {
       label: 'Phone',
-      value: profile?.phone || '0942162425',
-      href: `tel:${profile?.phone || '0942162425'}`,
+      value: profile.phone,
+      href: `tel:${profile.phone}`,
       icon: Phone,
       color: '#a855f7',
       hint: 'Available 9am – 6pm EAT',
     },
-    {
+    profile?.linkedin_url && {
       label: 'LinkedIn',
-      value: 'linkedin.com/in/adonaymussie',
-      href:
-        profile?.linkedin_url ||
-        'https://www.linkedin.com/in/adonaymussie/',
+      value: formatUrl(profile.linkedin_url),
+      href: profile.linkedin_url,
       icon: LinkedinIcon,
       color: '#0a66c2',
       hint: 'Connect professionally',
     },
-    {
+    profile?.github_url && {
       label: 'GitHub',
-      value: 'github.com/AdonayM',
-      href: profile?.github_url || 'https://github.com/AdonayM',
+      value: formatUrl(profile.github_url),
+      href: profile.github_url,
       icon: GithubIcon,
       color: '#111111',
       hint: 'Code, projects & security labs',
     },
-    {
+    profile?.telegram_url && {
       label: 'Telegram',
-      value: 't.me/AdonayM',
-      href: profile?.telegram_url || 'https://t.me/AdonayM',
+      value: formatUrl(profile.telegram_url),
+      href: profile.telegram_url,
       icon: Send,
       color: '#0088cc',
       hint: 'Quick chats',
     },
-  ]
+  ].filter(Boolean) // remove any falsy entries (empty profile fields)
 
-  /* ══════════ ANIMATION VARIANTS ══════════ */
+  /* Animation variants */
   const cardVariants = {
-    hidden: { opacity: 0, y: 20, filter: 'blur(6px)' },
+    hidden: { opacity: 0, y: 30, filter: 'blur(6px)' },
     visible: (i = 0) => ({
       opacity: 1,
       y: 0,
       filter: 'blur(0px)',
       transition: {
-        duration: 0.6,
+        duration: 0.7,
         delay: i * 0.08,
         ease: [0.22, 1, 0.36, 1],
       },
     }),
   }
 
+  if (loading) {
+    return (
+      <section className="min-h-screen bg-[#f0f0ef] flex items-center justify-center">
+        <div className="text-[#06b6d4] text-sm font-mono tracking-[0.25em] uppercase animate-pulse">
+          Loading contact...
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="min-h-screen bg-[#f0f0ef] text-[#111] pt-2 pb-20 px-6 lg:px-12 overflow-x-hidden">
-      <div className="max-w-[900px] mx-auto">
+      <div className="max-w-[1100px] mx-auto">
 
         {/* ══════════ PAGE HEADER ══════════ */}
         <motion.div
@@ -146,18 +165,35 @@ const Contact = ({ profile }) => {
           </div>
         </motion.div>
 
-        {/* ══════════ INTRO TEXT ══════════ */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, delay: 0.15 }}
-          className="text-[15px] md:text-base leading-[1.75] text-gray-700 font-light max-w-2xl mb-10"
-        >
-          Reach out through whichever channel works best for you.
-        </motion.p>
+        {/* ══════════ INTRO + LOCATION ══════════ */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.15 }}
+            className="text-[15px] md:text-base leading-[1.75] text-gray-700 font-light max-w-xl"
+          >
+            Reach out through whichever channel works best for you.
+          </motion.p>
 
-        {/* ══════════ CONTACT CARDS — VERTICAL STACK ══════════ */}
+          {profile?.location && (
+            <motion.div
+              initial={{ opacity: 0, x: 10 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+              className="flex items-center gap-2 shrink-0"
+            >
+              <MapPin className="w-3.5 h-3.5 text-[#06b6d4]" />
+              <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-gray-600">
+                {profile.location}
+              </span>
+            </motion.div>
+          )}
+        </div>
+
+        {/* ══════════ CONTACT CARDS — VERTICAL ══════════ */}
         <div className="space-y-3">
           {contactChannels.map((channel, i) => {
             const Icon = channel.icon
@@ -178,7 +214,7 @@ const Contact = ({ profile }) => {
                 custom={i}
                 className="group relative bg-white border border-black/10 rounded-xl p-4 flex items-center gap-4 hover:border-black/30 hover:shadow-[0_15px_40px_-20px_rgba(0,0,0,0.25)] hover:-translate-y-1 transition-all duration-300 overflow-hidden"
               >
-                {/* Radial glow */}
+                {/* Radial glow on hover */}
                 <div
                   className="absolute -inset-20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
                   style={{
@@ -226,6 +262,15 @@ const Contact = ({ profile }) => {
             )
           })}
         </div>
+
+        {/* If profile has no contact info at all */}
+        {contactChannels.length === 0 && (
+          <div className="text-center py-12 border border-dashed border-black/20 rounded-xl">
+            <p className="text-sm font-mono text-gray-500">
+              No contact channels configured yet.
+            </p>
+          </div>
+        )}
       </div>
     </section>
   )
