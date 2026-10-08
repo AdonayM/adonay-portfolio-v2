@@ -1,9 +1,7 @@
 // src/pages/admin/Profile.jsx
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  ArrowLeft,
   Save,
   Check,
   AlertCircle,
@@ -14,6 +12,7 @@ import {
 import { supabase } from '../../lib/supabaseClient'
 import { useProfile } from '../../lib/hooks'
 import ImageUpload from '../../components/ImageUpload'
+import FileUpload from '../../components/FileUpload'
 
 const ProfileEditor = () => {
   const { data: profile, loading: loadingProfile } = useProfile()
@@ -78,7 +77,6 @@ const ProfileEditor = () => {
     setSaving(true)
     setError('')
     setSuccess(false)
-
     try {
       const { error: updateError } = await supabase
         .from('profile')
@@ -87,13 +85,10 @@ const ProfileEditor = () => {
           updated_at: new Date().toISOString(),
         })
         .eq('id', 1)
-
       if (updateError) throw updateError
-
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
-      console.error('Save error:', err)
       setError(err.message || 'Failed to save changes.')
     } finally {
       setSaving(false)
@@ -102,72 +97,54 @@ const ProfileEditor = () => {
 
   if (loadingProfile) {
     return (
-      <section className="min-h-screen bg-[#f0f0ef] flex items-center justify-center">
+      <div className="min-h-screen bg-[#f0f0ef] flex items-center justify-center">
         <div className="text-[#06b6d4] text-sm font-mono tracking-[0.25em] uppercase animate-pulse">
           Loading profile...
         </div>
-      </section>
+      </div>
     )
   }
 
   return (
-    <section className="min-h-screen bg-[#f0f0ef] text-[#111] pt-16 pb-24 px-6 lg:px-12">
-      <div className="max-w-[900px] mx-auto">
+    <section className="min-h-screen bg-[#f0f0ef] text-[#111] pt-6 pb-16 px-6 lg:px-10">
+      <div className="max-w-[1200px] mx-auto">
 
-        {/* HEADER */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8"
-        >
-          <Link
-            to="/admin"
-            className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500 hover:text-[#111] mb-6 transition-colors group"
-          >
-            <ArrowLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
-            Back to Dashboard
-          </Link>
+        {/* COMPACT HEADER */}
+       <motion.div
+  initial={{ opacity: 0, y: 12 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.4 }}
+  className="mb-8"
+>
+  <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight leading-tight">
+    Profile Editor
+  </h1>
 
-          <div className="flex items-center gap-2 flex-wrap mb-2">
-            <div className="p-1 bg-white border border-black/10 rounded">
-              <User className="w-3.5 h-3.5 text-[#06b6d4]" strokeWidth={1.75} />
-            </div>
-            <p className="text-[9px] font-mono uppercase tracking-[0.25em] text-gray-500">
-              // Admin · Profile
-            </p>
-          </div>
+  <div className="mt-2 relative h-[2px] w-full overflow-hidden">
+    <div
+      className="absolute inset-0"
+      style={{
+        background: 'linear-gradient(90deg, #06b6d4, #a855f7, #06b6d4)',
+        boxShadow: '0 0 15px rgba(6,182,212,0.4)',
+      }}
+    />
+    <motion.div
+      className="absolute inset-0"
+      style={{
+        background:
+          'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.95) 50%, transparent 100%)',
+        backgroundSize: '40% 100%',
+        backgroundRepeat: 'no-repeat',
+      }}
+      animate={{ backgroundPosition: ['-50% 0%', '150% 0%'] }}
+      transition={{ duration: 1.8, repeat: Infinity, ease: 'linear' }}
+    />
+  </div>
+</motion.div>
 
-          <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight leading-tight">
-            Profile Editor
-          </h1>
-
-          <div className="mt-2.5 relative h-[2px] w-full overflow-hidden">
-            <div
-              className="absolute inset-0"
-              style={{
-                background: 'linear-gradient(90deg, #06b6d4, #a855f7, #06b6d4)',
-                boxShadow: '0 0 15px rgba(6,182,212,0.4)',
-              }}
-            />
-            <motion.div
-              className="absolute inset-0"
-              style={{
-                background:
-                  'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.95) 50%, transparent 100%)',
-                backgroundSize: '40% 100%',
-                backgroundRepeat: 'no-repeat',
-              }}
-              animate={{ backgroundPosition: ['-50% 0%', '150% 0%'] }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: 'linear' }}
-            />
-          </div>
-        </motion.div>
-
-        {/* SUCCESS / ERROR BANNERS */}
         {success && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-6 flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800"
           >
@@ -177,7 +154,7 @@ const ProfileEditor = () => {
         )}
         {error && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-6 flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-800"
           >
@@ -186,10 +163,7 @@ const ProfileEditor = () => {
           </motion.div>
         )}
 
-        {/* FORM */}
-        <div className="space-y-8">
-
-          {/* Identity */}
+        <div className="space-y-6">
           <Section title="Identity" desc="Your name, tagline, and photo">
             <Field label="Full Name">
               <input
@@ -218,11 +192,7 @@ const ProfileEditor = () => {
             />
           </Section>
 
-          {/* Bio Paragraphs */}
-          <Section
-            title="Bio Paragraphs"
-            desc="Each entry becomes a paragraph on the About page"
-          >
+          <Section title="Bio Paragraphs" desc="Each entry becomes a paragraph on the About page">
             <div className="space-y-3">
               {form.bio_paragraphs.map((para, i) => (
                 <div key={i} className="flex gap-2">
@@ -255,11 +225,7 @@ const ProfileEditor = () => {
             </div>
           </Section>
 
-          {/* Contact */}
-          <Section
-            title="Contact Information"
-            desc="Shown on the Contact page and in the profile card"
-          >
+          <Section title="Contact Information" desc="Shown on the Contact page">
             <div className="grid md:grid-cols-2 gap-4">
               <Field label="Email">
                 <input
@@ -267,30 +233,24 @@ const ProfileEditor = () => {
                   value={form.email}
                   onChange={(e) => updateField('email', e.target.value)}
                   className={inputClass}
-                  placeholder="you@example.com"
                 />
               </Field>
-
               <Field label="Phone">
                 <input
                   type="text"
                   value={form.phone}
                   onChange={(e) => updateField('phone', e.target.value)}
                   className={inputClass}
-                  placeholder="0942162425"
                 />
               </Field>
-
               <Field label="Location">
                 <input
                   type="text"
                   value={form.location}
                   onChange={(e) => updateField('location', e.target.value)}
                   className={inputClass}
-                  placeholder="Addis Ababa, Ethiopia"
                 />
               </Field>
-
               <Field label="Availability Status">
                 <input
                   type="text"
@@ -299,13 +259,11 @@ const ProfileEditor = () => {
                     updateField('availability_status', e.target.value)
                   }
                   className={inputClass}
-                  placeholder="Available for opportunities"
                 />
               </Field>
             </div>
           </Section>
 
-          {/* Social Links */}
           <Section title="Social Links" desc="Full URLs shown on the Contact page">
             <Field label="LinkedIn URL">
               <input
@@ -313,71 +271,57 @@ const ProfileEditor = () => {
                 value={form.linkedin_url}
                 onChange={(e) => updateField('linkedin_url', e.target.value)}
                 className={inputClass}
-                placeholder="https://linkedin.com/in/username"
               />
             </Field>
-
             <Field label="GitHub URL">
               <input
                 type="url"
                 value={form.github_url}
                 onChange={(e) => updateField('github_url', e.target.value)}
                 className={inputClass}
-                placeholder="https://github.com/username"
               />
             </Field>
-
             <Field label="Telegram URL">
               <input
                 type="url"
                 value={form.telegram_url}
                 onChange={(e) => updateField('telegram_url', e.target.value)}
                 className={inputClass}
-                placeholder="https://t.me/username"
-              />
-            </Field>
-
-            <Field label="Resume URL" hint="Optional — path to a PDF">
-              <input
-                type="text"
-                value={form.resume_url}
-                onChange={(e) => updateField('resume_url', e.target.value)}
-                className={inputClass}
-                placeholder="/resume.pdf"
               />
             </Field>
           </Section>
 
-          {/* Save */}
-          <div className="flex justify-end pt-4 border-t border-black/10">
+          <Section
+            title="CV & Resume"
+            desc="Private documents stored in a secure bucket. Download from the Files page."
+          >
+            <FileUpload
+              label="Resume / CV"
+              value={form.resume_url}
+              onChange={(url) => updateField('resume_url', url)}
+              accept="application/pdf"
+              maxSize={10}
+              hint="PDF · max 10MB · Private (only you can download)"
+            />
+          </Section>
+
+          <div className="flex justify-end pt-6 border-t border-black/10">
             <button
               onClick={handleSave}
               disabled={saving}
-              className="group relative inline-flex items-center gap-2 px-6 py-3.5 text-[#f0f0ef] text-[11px] font-mono uppercase tracking-widest rounded-xl transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              className="group relative inline-flex items-center gap-2 px-6 py-3.5 text-[#f0f0ef] text-[11px] font-mono uppercase tracking-widest rounded-xl transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-60"
               style={{
                 background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
-                boxShadow:
-                  'inset 0 1px 0 rgba(255,255,255,0.1), 0 1px 2px rgba(0,0,0,0.4)',
               }}
             >
-              <span
-                className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                style={{
-                  boxShadow:
-                    '0 15px 40px -10px rgba(6,182,212,0.55), 0 0 0 1px rgba(6,182,212,0.35)',
-                }}
-              />
               {success ? (
                 <>
-                  <Check className="relative z-10 w-3.5 h-3.5" />
-                  <span className="relative z-10">Saved</span>
+                  <Check className="w-3.5 h-3.5" /> Saved
                 </>
               ) : (
                 <>
-                  <Save className="relative z-10 w-3.5 h-3.5" />
-                  <span className="relative z-10">
-                    {saving ? 'Saving...' : 'Save Changes'}
-                  </span>
+                  <Save className="w-3.5 h-3.5" />
+                  {saving ? 'Saving...' : 'Save Changes'}
                 </>
               )}
             </button>
@@ -388,20 +332,19 @@ const ProfileEditor = () => {
   )
 }
 
-/* Reusable pieces */
 const inputClass =
   'w-full px-3.5 py-2.5 bg-white border border-black/10 rounded-lg text-sm text-[#111] placeholder-gray-400 focus:outline-none focus:border-[#06b6d4] focus:shadow-[0_0_0_3px_rgba(6,182,212,0.15)] transition-all'
 
 const Section = ({ title, desc, children }) => (
   <motion.div
-    initial={{ opacity: 0, y: 20 }}
+    initial={{ opacity: 0, y: 12 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
-    transition={{ duration: 0.5 }}
+    transition={{ duration: 0.4 }}
     className="bg-white border border-black/10 rounded-2xl p-6 md:p-8"
   >
     <div className="mb-6">
-      <h2 className="font-display text-xl font-bold text-[#111] leading-tight">
+      <h2 className="font-display text-lg font-bold text-[#111] leading-tight">
         {title}
       </h2>
       {desc && (
@@ -418,9 +361,7 @@ const Field = ({ label, hint, children }) => (
       {label}
     </label>
     {children}
-    {hint && (
-      <p className="text-[10px] text-gray-400 mt-1 font-mono">{hint}</p>
-    )}
+    {hint && <p className="text-[10px] text-gray-400 mt-1 font-mono">{hint}</p>}
   </div>
 )
 

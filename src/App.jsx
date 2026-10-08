@@ -11,6 +11,7 @@ import { supabase } from './lib/supabaseClient'
 import { trackPageView } from './lib/analytics'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import AdminLayout from './components/AdminLayout'
 
 // Public pages
 import Home from './pages/Home'
@@ -35,12 +36,11 @@ import AdminAnalytics from './pages/admin/Analytics'
 
 import ProtectedRoute from './components/ProtectedRoute'
 
-/* ═══════════════════════════════════════════════════════
-   Layout wrapper — hides Navbar/Footer on /admin routes
-   ═══════════════════════════════════════════════════════ */
 function AppLayout({ children }) {
   const location = useLocation()
   const isAdminRoute = location.pathname.startsWith('/admin')
+  const isLoginPage = location.pathname === '/admin/login'
+  const useAdminLayout = isAdminRoute && !isLoginPage
 
   /* Custom analytics — fires on every public page view */
   useEffect(() => {
@@ -49,6 +49,12 @@ function AppLayout({ children }) {
     }
   }, [location.pathname, isAdminRoute])
 
+  /* Admin pages (except login) get the sidebar layout */
+  if (useAdminLayout) {
+    return <AdminLayout>{children}</AdminLayout>
+  }
+
+  /* Public pages + login get the standard layout */
   return (
     <div className="min-h-screen bg-[#f0f0ef] text-[#111] selection:bg-[#06b6d4] selection:text-black flex flex-col">
       {!isAdminRoute && <Navbar />}
@@ -56,8 +62,6 @@ function AppLayout({ children }) {
         {children}
       </main>
       {!isAdminRoute && <Footer />}
-
-      {/* Vercel Analytics — kept as a backup/parallel tracker */}
       {!isAdminRoute && <Analytics />}
     </div>
   )
@@ -107,7 +111,9 @@ function App() {
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/contact" element={<Contact />} />
+
           <Route path="/admin/login" element={<Login />} />
+
           <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/admin/profile" element={<ProtectedRoute><ProfileEditor /></ProtectedRoute>} />
           <Route path="/admin/education" element={<ProtectedRoute><EducationEditor /></ProtectedRoute>} />
@@ -117,8 +123,7 @@ function App() {
           <Route path="/admin/certifications" element={<ProtectedRoute><CertificationsEditor /></ProtectedRoute>} />
           <Route path="/admin/tryhackme" element={<ProtectedRoute><TryHackMeEditor /></ProtectedRoute>} />
           <Route path="/admin/files" element={<ProtectedRoute><FilesManager /></ProtectedRoute>} />
-          <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalytics /></ProtectedRoute>}/>
-        
+          <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalytics /></ProtectedRoute>} />
         </Routes>
       </AppLayout>
     </Router>

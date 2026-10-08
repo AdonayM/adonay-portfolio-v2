@@ -116,7 +116,7 @@ const SkillsEditor = () => {
         success={success}
         error={error}
       >
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           {items.map((item, i) => (
             <ItemCard
               key={item.id || i}
