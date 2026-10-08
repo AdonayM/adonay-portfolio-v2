@@ -1,12 +1,15 @@
 // src/components/Navbar.jsx
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, Shield } from 'lucide-react'
+import { Menu, X, Shield, FileText } from 'lucide-react'
+import { useProfile } from '../lib/hooks'
+import ThemeToggle from './ThemeToggle'
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const location = useLocation()
+  const { data: profile } = useProfile()
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -30,24 +33,27 @@ const Navbar = () => {
           : 'bg-[#f0f0ef] py-5'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+        <div className="flex items-center justify-between h-12">
+          {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <Shield className="w-7 h-7 text-[#111]" />
-            <span className="font-black text-xl tracking-tighter text-[#111]">
+            <Shield className="w-5 h-5 text-[#111]" />
+            <span className="font-black text-[15px] tracking-tighter text-[#111]">
               Adonay<span className="text-[#06b6d4]">.</span>
             </span>
           </Link>
 
-          <div className="hidden md:flex space-x-1">
+          {/* Center: Nav links */}
+          <div className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
-              const isActive = location.pathname.startsWith(link.path) && link.path !== '/'
+              const isActive =
+                location.pathname.startsWith(link.path) && link.path !== '/'
               const isHome = link.path === '/' && location.pathname === '/'
               return (
                 <Link
                   key={link.name}
                   to={link.path}
-                  className={`px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                  className={`px-4 py-2 text-[12px] font-medium transition-all duration-200 ${
                     isActive || isHome
                       ? 'text-[#111] font-bold underline underline-offset-4 decoration-[#06b6d4] decoration-2'
                       : 'text-gray-600 hover:text-[#111]'
@@ -59,14 +65,36 @@ const Navbar = () => {
             })}
           </div>
 
-          <div className="md:hidden">
-            <button onClick={() => setIsOpen(!isOpen)} className="text-[#111] p-2">
-              {isOpen ? <X /> : <Menu />}
-            </button>
+          {/* Right: Theme toggle + Resume + Mobile menu */}
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+
+            {profile?.resume_url && (
+              <a
+                href={profile.resume_url}
+                target="_blank"
+                rel="noreferrer"
+                className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 text-[10px] font-mono uppercase tracking-widest text-[#111] border border-[#111] rounded-lg hover:bg-[#111] hover:text-[#f0f0ef] transition-all"
+                title="Download Resume"
+              >
+                <FileText className="w-3 h-3" />
+                Resume
+              </a>
+            )}
+
+            <div className="md:hidden">
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="text-[#111] p-2"
+              >
+                {isOpen ? <X /> : <Menu />}
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Mobile menu */}
       {isOpen && (
         <div className="md:hidden bg-[#f0f0ef] border-b border-black/10 absolute w-full">
           <div className="px-4 pt-2 pb-6 space-y-2">
@@ -80,6 +108,19 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
+
+            {profile?.resume_url && (
+              <a
+                href={profile.resume_url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 px-4 py-3 text-[#111] border border-[#111] rounded-xl text-base font-medium"
+                onClick={() => setIsOpen(false)}
+              >
+                <FileText className="w-4 h-4" />
+                Resume
+              </a>
+            )}
           </div>
         </div>
       )}

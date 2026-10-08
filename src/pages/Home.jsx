@@ -127,14 +127,7 @@ const Home = () => {
           transition={{ duration: 0.6 }}
           className="mb-6"
         >
-          <div className="flex items-center gap-2 flex-wrap mb-1.5">
-            <div className="p-1 bg-white border border-black/10 rounded">
-              <Terminal className="w-3.5 h-3.5 text-[#111]" strokeWidth={1.75} />
-            </div>
-            <p className="text-[9px] font-mono uppercase tracking-[0.25em] text-gray-500">
-              // 00. Welcome
-            </p>
-          </div>
+          
 
           <div className="mt-2.5 relative h-[2px] w-full overflow-hidden">
             <div

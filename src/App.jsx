@@ -42,7 +42,7 @@ function AppLayout({ children }) {
   return (
     <div className="min-h-screen bg-[#f0f0ef] text-[#111] selection:bg-[#06b6d4] selection:text-black flex flex-col">
       {!isAdminRoute && <Navbar />}
-      <main className={`flex-grow ${!isAdminRoute ? 'pt-16' : ''}`}>
+      <main className={`flex-grow ${!isAdminRoute ? 'pt-20' : ''}`}>
         {children}
       </main>
       {!isAdminRoute && <Footer />}

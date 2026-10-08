@@ -16,6 +16,7 @@ import {
   FileArchive,
 } from 'lucide-react'
 import { useAuth } from '../../lib/AuthContext'
+import ThemeToggle from '../../components/ThemeToggle'
 
 const Dashboard = () => {
   const { user, signOut } = useAuth()
@@ -144,22 +145,23 @@ const Dashboard = () => {
 
             {/* Header actions */}
             <div className="flex items-center gap-2 mt-6">
-              <Link
-                to="/"
-                target="_blank"
-                className="inline-flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest px-4 py-2.5 border border-black/15 rounded-lg hover:bg-white hover:border-black/30 transition-all"
-              >
-                View Site
-                <ExternalLink className="w-3 h-3" />
-              </Link>
-              <button
-                onClick={handleSignOut}
-                className="inline-flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest px-4 py-2.5 border border-red-200 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-all"
-              >
-                <LogOut className="w-3 h-3" />
-                Sign Out
-              </button>
-            </div>
+                <ThemeToggle />
+                <Link
+                  to="/"
+                  target="_blank"
+                  className="inline-flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest px-4 py-2.5 border border-black/15 rounded-lg hover:bg-white hover:border-black/30 transition-all"
+                >
+                  View Site
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  className="inline-flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest px-4 py-2.5 border border-red-200 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-all"
+                >
+                  <LogOut className="w-3 h-3" />
+                  Sign Out
+                </button>
+              </div>
           </div>
 
           <p className="text-sm text-gray-600 leading-relaxed mt-4 max-w-2xl font-light">

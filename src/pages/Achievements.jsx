@@ -166,14 +166,7 @@ const Achievements = () => {
           transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <div className="flex items-center gap-2 flex-wrap mb-1.5">
-            <div className="p-1 bg-white border border-black/10 rounded">
-              <Trophy className="w-3.5 h-3.5 text-[#111]" strokeWidth={1.75} />
-            </div>
-            <p className="text-[9px] font-mono uppercase tracking-[0.25em] text-gray-500">
-              // 05. Certifications
-            </p>
-          </div>
+         
 
           <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight leading-none">
             Certifications
