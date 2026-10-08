@@ -6,6 +6,7 @@ import {
   Route,
   useLocation,
 } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import { supabase } from './lib/supabaseClient'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -42,10 +43,13 @@ function AppLayout({ children }) {
   return (
     <div className="min-h-screen bg-[#f0f0ef] text-[#111] selection:bg-[#06b6d4] selection:text-black flex flex-col">
       {!isAdminRoute && <Navbar />}
-      <main className={`flex-grow ${!isAdminRoute ? 'pt-20' : ''}`}>
+      <main className={`flex-grow ${!isAdminRoute ? 'pt-24' : ''}`}>
         {children}
       </main>
       {!isAdminRoute && <Footer />}
+
+      {/* Vercel Analytics — privacy-friendly, no cookies */}
+      {!isAdminRoute && <Analytics />}
     </div>
   )
 }
