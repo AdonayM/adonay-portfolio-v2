@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom'
 import { Analytics } from '@vercel/analytics/react'
 import { supabase } from './lib/supabaseClient'
+import { trackPageView } from './lib/analytics'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 
@@ -40,6 +41,13 @@ function AppLayout({ children }) {
   const location = useLocation()
   const isAdminRoute = location.pathname.startsWith('/admin')
 
+  /* Custom analytics — fires on every public page view */
+  useEffect(() => {
+    if (!isAdminRoute) {
+      trackPageView(location.pathname)
+    }
+  }, [location.pathname, isAdminRoute])
+
   return (
     <div className="min-h-screen bg-[#f0f0ef] text-[#111] selection:bg-[#06b6d4] selection:text-black flex flex-col">
       {!isAdminRoute && <Navbar />}
@@ -48,7 +56,7 @@ function AppLayout({ children }) {
       </main>
       {!isAdminRoute && <Footer />}
 
-      {/* Vercel Analytics — privacy-friendly, no cookies */}
+      {/* Vercel Analytics — kept as a backup/parallel tracker */}
       {!isAdminRoute && <Analytics />}
     </div>
   )
@@ -92,90 +100,22 @@ function App() {
     <Router>
       <AppLayout>
         <Routes>
-          {/* ══════════ Public Routes ══════════ */}
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/contact" element={<Contact />} />
-
-          {/* ══════════ Admin Auth ══════════ */}
           <Route path="/admin/login" element={<Login />} />
-
-          {/* ══════════ Admin Dashboard ══════════ */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/profile"
-            element={
-              <ProtectedRoute>
-                <ProfileEditor />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/education"
-            element={
-              <ProtectedRoute>
-                <EducationEditor />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/skills"
-            element={
-              <ProtectedRoute>
-                <SkillsEditor />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/experience"
-            element={
-              <ProtectedRoute>
-                <ExperienceEditor />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/projects"
-            element={
-              <ProtectedRoute>
-                <ProjectsEditor />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/certifications"
-            element={
-              <ProtectedRoute>
-                <CertificationsEditor />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/tryhackme"
-            element={
-              <ProtectedRoute>
-                <TryHackMeEditor />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/files"
-            element={
-              <ProtectedRoute>
-                <FilesManager />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/admin/profile" element={<ProtectedRoute><ProfileEditor /></ProtectedRoute>} />
+          <Route path="/admin/education" element={<ProtectedRoute><EducationEditor /></ProtectedRoute>} />
+          <Route path="/admin/skills" element={<ProtectedRoute><SkillsEditor /></ProtectedRoute>} />
+          <Route path="/admin/experience" element={<ProtectedRoute><ExperienceEditor /></ProtectedRoute>} />
+          <Route path="/admin/projects" element={<ProtectedRoute><ProjectsEditor /></ProtectedRoute>} />
+          <Route path="/admin/certifications" element={<ProtectedRoute><CertificationsEditor /></ProtectedRoute>} />
+          <Route path="/admin/tryhackme" element={<ProtectedRoute><TryHackMeEditor /></ProtectedRoute>} />
+          <Route path="/admin/files" element={<ProtectedRoute><FilesManager /></ProtectedRoute>} />
         </Routes>
       </AppLayout>
     </Router>
