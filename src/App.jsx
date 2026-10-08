@@ -31,6 +31,7 @@ import ProjectsEditor from './pages/admin/Projects'
 import CertificationsEditor from './pages/admin/Certifications'
 import TryHackMeEditor from './pages/admin/TryHackMe'
 import FilesManager from './pages/admin/Files'
+import AdminAnalytics from './pages/admin/Analytics'
 
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -116,6 +117,8 @@ function App() {
           <Route path="/admin/certifications" element={<ProtectedRoute><CertificationsEditor /></ProtectedRoute>} />
           <Route path="/admin/tryhackme" element={<ProtectedRoute><TryHackMeEditor /></ProtectedRoute>} />
           <Route path="/admin/files" element={<ProtectedRoute><FilesManager /></ProtectedRoute>} />
+          <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalytics /></ProtectedRoute>}/>
+        
         </Routes>
       </AppLayout>
     </Router>

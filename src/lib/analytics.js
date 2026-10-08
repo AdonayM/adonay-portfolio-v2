@@ -29,7 +29,7 @@ export async function trackPageView(path) {
         session_id: sessionId,
         user_agent: navigator.userAgent,
       }),
-      keepalive: true, // Allows the request to outlive the page if user navigates away
+      keepalive: true,
     }).catch(() => {
       // Silent fail
     })

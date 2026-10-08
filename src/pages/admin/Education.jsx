@@ -15,6 +15,9 @@ import { supabase } from '../../lib/supabaseClient'
 import { useEducation } from '../../lib/hooks'
 import ConfirmModal from '../../components/ConfirmModal'
 
+/* ═══════════════════════════════════════════════════════
+   EDUCATION EDITOR
+   ═══════════════════════════════════════════════════════ */
 const EducationEditor = () => {
   const { data: education, loading } = useEducation()
   const [items, setItems] = useState([])
@@ -52,7 +55,6 @@ const EducationEditor = () => {
     ])
   }
 
-  /* Actually perform the delete after confirmation */
   const confirmDelete = async () => {
     if (!deleteTarget) return
     const { item, index } = deleteTarget
@@ -187,7 +189,6 @@ const EducationEditor = () => {
         <SaveBar onSave={handleSave} saving={saving} success={success} />
       </AdminPageShell>
 
-      {/* Delete confirmation modal */}
       <ConfirmModal
         isOpen={!!deleteTarget}
         title="Delete this entry?"
@@ -200,14 +201,21 @@ const EducationEditor = () => {
   )
 }
 
-/* ───── SHARED COMPONENTS (used across all editors) ───── */
+/* ═══════════════════════════════════════════════════════
+   SHARED COMPONENTS + STYLES
+   These are used by ALL other admin pages (Skills, Experience,
+   Certifications, TryHackMe). Do not remove them.
+   ═══════════════════════════════════════════════════════ */
 
+/* ─── Input class ─── */
 export const inputClass =
   'w-full px-3.5 py-2.5 bg-white border border-black/10 rounded-lg text-sm text-[#111] placeholder-gray-400 focus:outline-none focus:border-[#06b6d4] focus:shadow-[0_0_0_3px_rgba(6,182,212,0.15)] transition-all'
 
+/* ─── Add button class ─── */
 export const addBtnClass =
   'inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest px-4 py-2.5 border border-black/15 rounded-lg hover:bg-white hover:border-black/30 transition-all'
 
+/* ─── Loader ─── */
 export const Loader = ({ text }) => (
   <section className="min-h-screen bg-[#f0f0ef] flex items-center justify-center">
     <div className="text-[#06b6d4] text-sm font-mono tracking-[0.25em] uppercase animate-pulse">
@@ -216,6 +224,7 @@ export const Loader = ({ text }) => (
   </section>
 )
 
+/* ─── Field wrapper ─── */
 export const Field = ({ label, hint, children }) => (
   <div>
     <label className="block text-[10px] font-mono uppercase tracking-[0.2em] text-gray-600 mb-2">
@@ -226,6 +235,7 @@ export const Field = ({ label, hint, children }) => (
   </div>
 )
 
+/* ─── Item card ─── */
 export const ItemCard = ({ index, onRemove, children }) => (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
@@ -249,6 +259,7 @@ export const ItemCard = ({ index, onRemove, children }) => (
   </motion.div>
 )
 
+/* ─── Page shell (header + wrapper) ─── */
 export const AdminPageShell = ({
   backTo,
   icon: Icon,
@@ -342,6 +353,7 @@ export const AdminPageShell = ({
   </section>
 )
 
+/* ─── Save bar ─── */
 export const SaveBar = ({ onSave, saving, success }) => (
   <div className="flex justify-end pt-8 mt-8 border-t border-black/10">
     <button

@@ -14,6 +14,7 @@ import {
   ArrowUpRight,
   ExternalLink,
   FileArchive,
+  BarChart3,   
 } from 'lucide-react'
 import { useAuth } from '../../lib/AuthContext'
 import ThemeToggle from '../../components/ThemeToggle'
@@ -84,6 +85,13 @@ const Dashboard = () => {
       icon: FileArchive,
       href: '/admin/files',
       color: '#0ea5e9',
+    },
+    {
+      label: 'Analytics',
+      desc: 'Visitor stats, countries, devices',
+      icon: BarChart3,
+      href: '/admin/analytics',
+      color: '#06b6d4',
     },
   ]
 

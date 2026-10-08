@@ -145,3 +145,11 @@ export const useAdminFiles = () =>
   useSupabaseQuery('admin_files', {
     order: { column: 'uploaded_at', ascending: false },
   })
+
+  /**
+ * Fetch all page views (raw). Client-side aggregation happens in the component.
+ */
+export const usePageViews = () =>
+  useSupabaseQuery('page_views', {
+    order: { column: 'visited_at', ascending: false },
+  })

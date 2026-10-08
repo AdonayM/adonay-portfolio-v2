@@ -25,12 +25,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ ok: false, error: 'Missing path' })
     }
 
-    // Skip admin routes — we don't want them in analytics
+    // Skip admin routes
     if (path.startsWith('/admin')) {
       return res.status(200).json({ ok: true, skipped: true })
     }
 
-    // Country / city from Vercel's edge headers (free)
+    // Country / city from Vercel's edge headers (free, automatic)
     const country = req.headers['x-vercel-ip-country'] || null
     const city = req.headers['x-vercel-ip-city'] || null
 
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
   }
 }
 
-/* ───── Small user-agent parsers ───── */
+/* ───── User-agent parsers ───── */
 
 function parseDevice(ua) {
   if (!ua) return 'desktop'
