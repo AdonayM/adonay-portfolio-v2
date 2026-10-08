@@ -1,5 +1,5 @@
 // src/pages/admin/Profile.jsx
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import {
   Save,
@@ -8,11 +8,18 @@ import {
   Plus,
   X,
   User,
+  Mail,
+  Link2,
+  FileText,
+  Upload,
+  Loader2,
 } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useProfile } from '../../lib/hooks'
 import ImageUpload from '../../components/ImageUpload'
 import FileUpload from '../../components/FileUpload'
+
+const BUCKET = 'portfolio-images'
 
 const ProfileEditor = () => {
   const { data: profile, loading: loadingProfile } = useProfile()
@@ -35,6 +42,8 @@ const ProfileEditor = () => {
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const photoInputRef = useRef(null)
 
   useEffect(() => {
     if (profile) {
@@ -73,6 +82,49 @@ const ProfileEditor = () => {
     updateField('bio_paragraphs', next)
   }
 
+  /* Compact photo upload */
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file.')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be under 5MB.')
+      return
+    }
+
+    setPhotoUploading(true)
+    setError('')
+
+    try {
+      const ext = file.name.split('.').pop()
+      const baseName = file.name
+        .replace(/\.[^.]+$/, '')
+        .replace(/[^a-zA-Z0-9-_]/g, '-')
+        .slice(0, 40)
+      const fileName = `${Date.now()}-${baseName}.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(fileName, file, { cacheControl: '3600', upsert: false })
+      if (uploadError) throw uploadError
+
+      const { data: urlData } = supabase.storage
+        .from(BUCKET)
+        .getPublicUrl(fileName)
+
+      updateField('photo_url', urlData.publicUrl)
+    } catch (err) {
+      setError(err.message || 'Upload failed.')
+    } finally {
+      setPhotoUploading(false)
+      e.target.value = ''
+    }
+  }
+
   const handleSave = async () => {
     setSaving(true)
     setError('')
@@ -107,40 +159,42 @@ const ProfileEditor = () => {
 
   return (
     <section className="min-h-screen bg-[#f0f0ef] text-[#111] pt-6 pb-16 px-6 lg:px-10">
-      <div className="max-w-[1200px] mx-auto">
+      <div className="w-full max-w-[1600px]">
 
-        {/* COMPACT HEADER */}
-       <motion.div
-  initial={{ opacity: 0, y: 12 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.4 }}
-  className="mb-8"
->
-  <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight leading-tight">
-    Profile Editor
-  </h1>
-
-  <div className="mt-2 relative h-[2px] w-full overflow-hidden">
-    <div
-      className="absolute inset-0"
-      style={{
-        background: 'linear-gradient(90deg, #06b6d4, #a855f7, #06b6d4)',
-        boxShadow: '0 0 15px rgba(6,182,212,0.4)',
-      }}
-    />
-    <motion.div
-      className="absolute inset-0"
-      style={{
-        background:
-          'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.95) 50%, transparent 100%)',
-        backgroundSize: '40% 100%',
-        backgroundRepeat: 'no-repeat',
-      }}
-      animate={{ backgroundPosition: ['-50% 0%', '150% 0%'] }}
-      transition={{ duration: 1.8, repeat: Infinity, ease: 'linear' }}
-    />
-  </div>
-</motion.div>
+        {/* HEADER */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="mb-8"
+        >
+          <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight leading-tight">
+            Profile Editor
+          </h1>
+          <div className="mt-2 relative h-[2px] w-full overflow-hidden">
+            <div
+              className="absolute inset-0"
+              style={{
+                background: 'linear-gradient(90deg, #06b6d4, #a855f7, #06b6d4)',
+                boxShadow: '0 0 15px rgba(6,182,212,0.4)',
+              }}
+            />
+            <motion.div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.95) 50%, transparent 100%)',
+                backgroundSize: '40% 100%',
+                backgroundRepeat: 'no-repeat',
+              }}
+              animate={{ backgroundPosition: ['-50% 0%', '150% 0%'] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: 'linear' }}
+            />
+          </div>
+          <p className="text-sm text-gray-600 leading-relaxed mt-3 font-light">
+            Manage your public identity, bio, and contact information.
+          </p>
+        </motion.div>
 
         {success && (
           <motion.div
@@ -163,197 +217,399 @@ const ProfileEditor = () => {
           </motion.div>
         )}
 
-        <div className="space-y-6">
-          <Section title="Identity" desc="Your name, tagline, and photo">
-            <Field label="Full Name">
-              <input
-                type="text"
-                value={form.full_name}
-                onChange={(e) => updateField('full_name', e.target.value)}
-                className={inputClass}
-                placeholder="Adonay Mussie"
-              />
-            </Field>
+        {/* TWO-COLUMN LAYOUT */}
+        <div className="grid lg:grid-cols-12 gap-4 mb-6">
 
-            <Field label="Tagline" hint="Short one-liner shown on the Home page">
-              <textarea
-                value={form.tagline}
-                onChange={(e) => updateField('tagline', e.target.value)}
-                rows={2}
-                className={inputClass}
-                placeholder="Cybersecurity professional passionate about..."
-              />
-            </Field>
+          {/* ══════ LEFT COLUMN ══════ */}
+          <div className="lg:col-span-7 space-y-4">
 
-            <ImageUpload
-              label="Profile Photo"
-              value={form.photo_url}
-              onChange={(url) => updateField('photo_url', url)}
-            />
-          </Section>
+            {/* Identity Card — with compact photo avatar */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="bg-white border border-black/10 rounded-2xl p-6"
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-9 h-9 rounded-lg bg-[#06b6d4]/10 border border-[#06b6d4]/30 flex items-center justify-center">
+                  <User className="w-4 h-4 text-[#06b6d4]" strokeWidth={1.75} />
+                </div>
+                <div>
+                  <h2 className="font-display text-lg font-bold leading-tight">
+                    Identity
+                  </h2>
+                  <p className="text-[11px] font-mono text-gray-500">
+                    Name, tagline, and profile photo
+                  </p>
+                </div>
+              </div>
 
-          <Section title="Bio Paragraphs" desc="Each entry becomes a paragraph on the About page">
-            <div className="space-y-3">
-              {form.bio_paragraphs.map((para, i) => (
-                <div key={i} className="flex gap-2">
-                  <textarea
-                    value={para}
-                    onChange={(e) => updateParagraph(i, e.target.value)}
-                    rows={3}
-                    className={inputClass + ' flex-1'}
-                    placeholder={`Paragraph ${i + 1}`}
-                  />
+              {/* Compact photo + name row */}
+              <div className="flex flex-col sm:flex-row gap-5 mb-5">
+                {/* Photo avatar */}
+                <div className="flex flex-col items-center gap-2 shrink-0">
+                  <div className="relative w-28 h-28 rounded-xl overflow-hidden border-2 border-black/10 bg-[#f0f0ef]">
+                    {form.photo_url ? (
+                      <img
+                        src={form.photo_url}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none'
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <User className="w-10 h-10 text-gray-300" />
+                      </div>
+                    )}
+
+                    {photoUploading && (
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                        <Loader2 className="w-5 h-5 text-white animate-spin" />
+                      </div>
+                    )}
+                  </div>
+
                   <button
                     type="button"
-                    onClick={() => removeParagraph(i)}
-                    className="shrink-0 p-2 self-start border border-red-200 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
-                    title="Remove paragraph"
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={photoUploading}
+                    className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest px-3 py-1.5 border border-black/15 rounded-md hover:bg-black/5 hover:border-black/30 transition-all disabled:opacity-60"
                   >
-                    <X className="w-4 h-4" />
+                    <Upload className="w-3 h-3" />
+                    {photoUploading ? 'Uploading...' : 'Change'}
                   </button>
+
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+
+                  {form.photo_url && (
+                    <button
+                      type="button"
+                      onClick={() => updateField('photo_url', '')}
+                      className="text-[10px] font-mono uppercase tracking-widest text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
-              ))}
 
-              <button
-                type="button"
-                onClick={addParagraph}
-                className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest px-4 py-2.5 border border-black/15 rounded-lg hover:bg-white hover:border-black/30 transition-all"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add Paragraph
-              </button>
-            </div>
-          </Section>
+                {/* Name + tagline fields */}
+                <div className="flex-1 space-y-4 min-w-0">
+                  <Field label="Full Name">
+                    <input
+                      type="text"
+                      value={form.full_name}
+                      onChange={(e) => updateField('full_name', e.target.value)}
+                      className={inputClass}
+                      placeholder="Adonay Mussie"
+                    />
+                  </Field>
 
-          <Section title="Contact Information" desc="Shown on the Contact page">
-            <div className="grid md:grid-cols-2 gap-4">
-              <Field label="Email">
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => updateField('email', e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="Phone">
-                <input
-                  type="text"
-                  value={form.phone}
-                  onChange={(e) => updateField('phone', e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="Location">
+                  <Field label="Tagline" hint="Short one-liner shown on Home">
+                    <textarea
+                      value={form.tagline}
+                      onChange={(e) => updateField('tagline', e.target.value)}
+                      rows={2}
+                      className={inputClass}
+                      placeholder="Cybersecurity professional passionate about..."
+                    />
+                  </Field>
+                </div>
+              </div>
+
+              {/* Optional: manual URL fallback */}
+              <details className="mt-2">
+                <summary className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500 cursor-pointer hover:text-[#111] transition-colors select-none">
+                  Or paste photo URL manually
+                </summary>
                 <input
                   type="text"
-                  value={form.location}
-                  onChange={(e) => updateField('location', e.target.value)}
-                  className={inputClass}
+                  value={form.photo_url}
+                  onChange={(e) => updateField('photo_url', e.target.value)}
+                  className={inputClass + ' mt-2'}
+                  placeholder="https://..."
                 />
-              </Field>
-              <Field label="Availability Status">
-                <input
-                  type="text"
-                  value={form.availability_status}
-                  onChange={(e) =>
-                    updateField('availability_status', e.target.value)
-                  }
-                  className={inputClass}
-                />
-              </Field>
-            </div>
-          </Section>
+              </details>
+            </motion.div>
 
-          <Section title="Social Links" desc="Full URLs shown on the Contact page">
-            <Field label="LinkedIn URL">
-              <input
-                type="url"
-                value={form.linkedin_url}
-                onChange={(e) => updateField('linkedin_url', e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="GitHub URL">
-              <input
-                type="url"
-                value={form.github_url}
-                onChange={(e) => updateField('github_url', e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Telegram URL">
-              <input
-                type="url"
-                value={form.telegram_url}
-                onChange={(e) => updateField('telegram_url', e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-          </Section>
-
-          <Section
-            title="CV & Resume"
-            desc="Private documents stored in a secure bucket. Download from the Files page."
-          >
-            <FileUpload
-              label="Resume / CV"
-              value={form.resume_url}
-              onChange={(url) => updateField('resume_url', url)}
-              accept="application/pdf"
-              maxSize={10}
-              hint="PDF · max 10MB · Private (only you can download)"
-            />
-          </Section>
-
-          <div className="flex justify-end pt-6 border-t border-black/10">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="group relative inline-flex items-center gap-2 px-6 py-3.5 text-[#f0f0ef] text-[11px] font-mono uppercase tracking-widest rounded-xl transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-60"
-              style={{
-                background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
-              }}
+            {/* Bio Paragraphs Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.05 }}
+              className="bg-white border border-black/10 rounded-2xl p-6"
             >
-              {success ? (
-                <>
-                  <Check className="w-3.5 h-3.5" /> Saved
-                </>
-              ) : (
-                <>
-                  <Save className="w-3.5 h-3.5" />
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </>
-              )}
-            </button>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-9 h-9 rounded-lg bg-[#a855f7]/10 border border-[#a855f7]/30 flex items-center justify-center">
+                  <FileText
+                    className="w-4 h-4 text-[#a855f7]"
+                    strokeWidth={1.75}
+                  />
+                </div>
+                <div>
+                  <h2 className="font-display text-lg font-bold leading-tight">
+                    Bio Paragraphs
+                  </h2>
+                  <p className="text-[11px] font-mono text-gray-500">
+                    Each entry appears as a paragraph on the About page
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {form.bio_paragraphs.map((para, i) => (
+                  <div key={i} className="flex gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500">
+                          Paragraph #{i + 1}
+                        </label>
+                      </div>
+                      <textarea
+                        value={para}
+                        onChange={(e) => updateParagraph(i, e.target.value)}
+                        rows={3}
+                        className={inputClass}
+                        placeholder={`Paragraph ${i + 1}`}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeParagraph(i)}
+                      className="shrink-0 p-2 self-start mt-6 border border-red-200 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                      title="Remove paragraph"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={addParagraph}
+                  className={addBtnClass}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add Paragraph
+                </button>
+              </div>
+            </motion.div>
           </div>
+
+          {/* ══════ RIGHT COLUMN ══════ */}
+          <div className="lg:col-span-5 space-y-4">
+
+            {/* Contact Info Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="bg-white border border-black/10 rounded-2xl p-6"
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-9 h-9 rounded-lg bg-[#10b981]/10 border border-[#10b981]/30 flex items-center justify-center">
+                  <Mail
+                    className="w-4 h-4 text-[#10b981]"
+                    strokeWidth={1.75}
+                  />
+                </div>
+                <div>
+                  <h2 className="font-display text-lg font-bold leading-tight">
+                    Contact Info
+                  </h2>
+                  <p className="text-[11px] font-mono text-gray-500">
+                    Shown on the Contact page
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Field label="Email">
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => updateField('email', e.target.value)}
+                    className={inputClass}
+                    placeholder="you@example.com"
+                  />
+                </Field>
+
+                <Field label="Phone">
+                  <input
+                    type="text"
+                    value={form.phone}
+                    onChange={(e) => updateField('phone', e.target.value)}
+                    className={inputClass}
+                    placeholder="0942162425"
+                  />
+                </Field>
+
+                <Field label="Location">
+                  <input
+                    type="text"
+                    value={form.location}
+                    onChange={(e) => updateField('location', e.target.value)}
+                    className={inputClass}
+                    placeholder="Addis Ababa, Ethiopia"
+                  />
+                </Field>
+
+                <Field
+                  label="Availability Status"
+                  hint="Shown on Home + Contact"
+                >
+                  <input
+                    type="text"
+                    value={form.availability_status}
+                    onChange={(e) =>
+                      updateField('availability_status', e.target.value)
+                    }
+                    className={inputClass}
+                    placeholder="Available for opportunities"
+                  />
+                </Field>
+              </div>
+            </motion.div>
+
+            {/* Social Links Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.15 }}
+              className="bg-white border border-black/10 rounded-2xl p-6"
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-9 h-9 rounded-lg bg-[#2563eb]/10 border border-[#2563eb]/30 flex items-center justify-center">
+                  <Link2
+                    className="w-4 h-4 text-[#2563eb]"
+                    strokeWidth={1.75}
+                  />
+                </div>
+                <div>
+                  <h2 className="font-display text-lg font-bold leading-tight">
+                    Social Links
+                  </h2>
+                  <p className="text-[11px] font-mono text-gray-500">
+                    Full URLs shown on the Contact page
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Field label="LinkedIn URL">
+                  <input
+                    type="url"
+                    value={form.linkedin_url}
+                    onChange={(e) =>
+                      updateField('linkedin_url', e.target.value)
+                    }
+                    className={inputClass}
+                    placeholder="https://linkedin.com/in/username"
+                  />
+                </Field>
+
+                <Field label="GitHub URL">
+                  <input
+                    type="url"
+                    value={form.github_url}
+                    onChange={(e) => updateField('github_url', e.target.value)}
+                    className={inputClass}
+                    placeholder="https://github.com/username"
+                  />
+                </Field>
+
+                <Field label="Telegram URL">
+                  <input
+                    type="url"
+                    value={form.telegram_url}
+                    onChange={(e) =>
+                      updateField('telegram_url', e.target.value)
+                    }
+                    className={inputClass}
+                    placeholder="https://t.me/username"
+                  />
+                </Field>
+              </div>
+            </motion.div>
+
+            {/* CV & Resume Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="bg-white border border-black/10 rounded-2xl p-6"
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-9 h-9 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/30 flex items-center justify-center">
+                  <FileText
+                    className="w-4 h-4 text-[#f59e0b]"
+                    strokeWidth={1.75}
+                  />
+                </div>
+                <div>
+                  <h2 className="font-display text-lg font-bold leading-tight">
+                    CV & Resume
+                  </h2>
+                  <p className="text-[11px] font-mono text-gray-500">
+                    Private document — visible only in admin
+                  </p>
+                </div>
+              </div>
+
+              <FileUpload
+                label="Resume / CV File"
+                value={form.resume_url}
+                onChange={(url) => updateField('resume_url', url)}
+                accept="application/pdf"
+                maxSize={10}
+                hint="PDF · max 10MB · Stored in private bucket"
+              />
+            </motion.div>
+          </div>
+        </div>
+
+        {/* SAVE BAR */}
+        <div className="flex justify-end pt-6 mt-6 border-t border-black/10">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="group relative inline-flex items-center gap-2 px-6 py-3.5 text-[#f0f0ef] text-[11px] font-mono uppercase tracking-widest rounded-xl transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-60"
+            style={{
+              background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
+              boxShadow:
+                'inset 0 1px 0 rgba(255,255,255,0.1), 0 1px 2px rgba(0,0,0,0.4)',
+            }}
+          >
+            {success ? (
+              <>
+                <Check className="w-3.5 h-3.5" /> Saved
+              </>
+            ) : (
+              <>
+                <Save className="w-3.5 h-3.5" />
+                {saving ? 'Saving...' : 'Save Changes'}
+              </>
+            )}
+          </button>
         </div>
       </div>
     </section>
   )
 }
 
+/* ─── Shared styles ─── */
 const inputClass =
   'w-full px-3.5 py-2.5 bg-white border border-black/10 rounded-lg text-sm text-[#111] placeholder-gray-400 focus:outline-none focus:border-[#06b6d4] focus:shadow-[0_0_0_3px_rgba(6,182,212,0.15)] transition-all'
 
-const Section = ({ title, desc, children }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 12 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    transition={{ duration: 0.4 }}
-    className="bg-white border border-black/10 rounded-2xl p-6 md:p-8"
-  >
-    <div className="mb-6">
-      <h2 className="font-display text-lg font-bold text-[#111] leading-tight">
-        {title}
-      </h2>
-      {desc && (
-        <p className="text-[12px] text-gray-500 mt-1 leading-snug">{desc}</p>
-      )}
-    </div>
-    <div className="space-y-5">{children}</div>
-  </motion.div>
-)
+const addBtnClass =
+  'inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest px-4 py-2.5 border border-black/15 rounded-lg hover:bg-white hover:border-black/30 transition-all'
 
 const Field = ({ label, hint, children }) => (
   <div>
