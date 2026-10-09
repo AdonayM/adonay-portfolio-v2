@@ -1,7 +1,7 @@
 // src/pages/Home.jsx
 import { motion, animate, useInView } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Terminal } from 'lucide-react'
+import { ArrowRight,BookOpen ,Terminal } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useProfile, useThmStats } from '../lib/hooks'
 
@@ -255,59 +255,66 @@ const Home = () => {
             </motion.div>
 
             {/* CTAs */}
-            <motion.div variants={itemVariants} className="flex flex-wrap gap-3 pt-1">
-              <Link
-                to="/projects"
-                className="group relative inline-flex items-center gap-2 px-6 py-3.5 text-[#f0f0ef] text-[10px] font-mono uppercase tracking-widest rounded-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden"
-                style={{
-                  background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
-                  boxShadow:
-                    'inset 0 1px 0 rgba(255,255,255,0.1), 0 1px 2px rgba(0,0,0,0.4)',
-                }}
-              >
-                <span
-                  className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                  style={{
-                    boxShadow:
-                      '0 15px 40px -10px rgba(6,182,212,0.55), 0 0 0 1px rgba(6,182,212,0.35)',
-                  }}
-                />
-                <motion.span
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none"
-                  style={{
-                    background:
-                      'linear-gradient(90deg, transparent 0%, rgba(6,182,212,0.4) 50%, transparent 100%)',
-                    backgroundSize: '60% 100%',
-                    backgroundRepeat: 'no-repeat',
-                  }}
-                  animate={{ backgroundPosition: ['-60% 0%', '160% 0%'] }}
-                  transition={{ duration: 1.8, repeat: Infinity, ease: 'linear' }}
-                />
-                <span className="relative z-10">View Projects</span>
-                <ArrowRight className="relative z-10 w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </Link>
+            {/* CTAs */}
+<motion.div
+  variants={itemVariants}
+  className="flex flex-wrap gap-3 pt-1"
+>
+  {/* View Projects — primary */}
+  <Link
+    to="/projects"
+    className="group relative inline-flex items-center gap-2 px-6 py-3.5 text-[#f0f0ef] text-[10px] font-mono uppercase tracking-widest rounded-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+    style={{
+      background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
+      boxShadow:
+        'inset 0 1px 0 rgba(255,255,255,0.1), 0 1px 2px rgba(0,0,0,0.4)',
+    }}
+  >
+    <span
+      className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+      style={{
+        boxShadow:
+          '0 15px 40px -10px rgba(6,182,212,0.55), 0 0 0 1px rgba(6,182,212,0.35)',
+      }}
+    />
+    <motion.span
+      className="absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none"
+      style={{
+        background:
+          'linear-gradient(90deg, transparent 0%, rgba(6,182,212,0.4) 50%, transparent 100%)',
+        backgroundSize: '60% 100%',
+        backgroundRepeat: 'no-repeat',
+      }}
+      animate={{ backgroundPosition: ['-60% 0%', '160% 0%'] }}
+      transition={{ duration: 1.8, repeat: Infinity, ease: 'linear' }}
+    />
+    <span className="relative z-10">View Projects</span>
+    <ArrowRight className="relative z-10 w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+  </Link>
 
-              <Link
-                to="/contact"
-                className="group relative inline-flex items-center gap-2 px-6 py-3.5 text-[#111] text-[10px] font-mono uppercase tracking-widest rounded-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden border border-[#111]/15 bg-white/40 backdrop-blur-sm"
-              >
-                <span
-                  className="absolute inset-0 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 pointer-events-none"
-                  style={{
-                    background:
-                      'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
-                  }}
-                />
-                <span
-                  className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                  style={{ boxShadow: '0 0 0 1px rgba(6,182,212,0.35)' }}
-                />
-                <span className="relative z-10 group-hover:text-[#f0f0ef] transition-colors duration-300">
-                  Contact Me
-                </span>
-                <ArrowRight className="relative z-10 w-3.5 h-3.5 text-[#111] group-hover:text-[#06b6d4] opacity-0 group-hover:opacity-100 -ml-2 group-hover:ml-0 group-hover:translate-x-0.5 transition-all duration-300" />
-              </Link>
-            </motion.div>
+
+  {/* Contact Me — tertiary */}
+  <Link
+    to="/contact"
+    className="group relative inline-flex items-center gap-2 px-6 py-3.5 text-[#111] text-[10px] font-mono uppercase tracking-widest rounded-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden border border-[#111]/15 bg-white/40 backdrop-blur-sm"
+  >
+    <span
+      className="absolute inset-0 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 pointer-events-none"
+      style={{
+        background:
+          'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
+      }}
+    />
+    <span
+      className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+      style={{ boxShadow: '0 0 0 1px rgba(6,182,212,0.35)' }}
+    />
+    <span className="relative z-10 group-hover:text-[#f0f0ef] transition-colors duration-300">
+      Contact Me
+    </span>
+    <ArrowRight className="relative z-10 w-3.5 h-3.5 text-[#111] group-hover:text-[#06b6d4] opacity-0 group-hover:opacity-100 -ml-2 group-hover:ml-0 group-hover:translate-x-0.5 transition-all duration-300" />
+  </Link>
+</motion.div>
 
             {/* ════ STATS — Dynamic from thm_stats ════ */}
             <motion.div

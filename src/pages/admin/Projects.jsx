@@ -4,14 +4,11 @@ import { motion } from 'framer-motion'
 import {
   Plus,
   Trash2,
-  Rocket,
-  X,
   Save,
   Check,
   AlertCircle,
-  ArrowLeft,
+  ChevronDown,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabaseClient'
 import { useProjects } from '../../lib/hooks'
 import { inputClass, addBtnClass, Loader, Field } from './Education'
@@ -30,19 +27,27 @@ const ProjectsEditor = () => {
   const [error, setError] = useState('')
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
+  /* Load projects + auto-select first one */
   useEffect(() => {
-    if (projectsData) setProjects(projectsData.map((p) => ({ ...p })))
+    if (projectsData && projectsData.length > 0) {
+      const mapped = projectsData.map((p) => ({ ...p }))
+      setProjects(mapped)
+      if (!selected) setSelected(mapped[0])
+    }
   }, [projectsData])
 
+  /* Load details for the selected project */
   useEffect(() => {
     if (!selected) return
     if (details[selected.slug]) return
+
     const fetch = async () => {
       const { data } = await supabase
         .from('project_details')
         .select('*')
         .eq('project_slug', selected.slug)
         .maybeSingle()
+
       setDetails((prev) => ({
         ...prev,
         [selected.slug]: data || {
@@ -116,8 +121,9 @@ const ProjectsEditor = () => {
         return
       }
     }
-    setProjects((prev) => prev.filter((p) => p.id !== selected.id))
-    setSelected(null)
+    const remaining = projects.filter((p) => p.id !== selected.id)
+    setProjects(remaining)
+    setSelected(remaining[0] || null)
     setShowDeleteModal(false)
   }
 
@@ -125,6 +131,7 @@ const ProjectsEditor = () => {
     if (!selected) return
     setSaving(true)
     setError('')
+
     try {
       const projectPayload = {
         slug: selected.slug,
@@ -142,7 +149,9 @@ const ProjectsEditor = () => {
       }
 
       if (selected._isNew) {
-        const { error } = await supabase.from('projects').insert(projectPayload)
+        const { error } = await supabase
+          .from('projects')
+          .insert(projectPayload)
         if (error) throw error
       } else {
         const { error } = await supabase
@@ -188,39 +197,20 @@ const ProjectsEditor = () => {
 
   return (
     <>
-      <section className="min-h-screen bg-[#f0f0ef] text-[#111] pt-16 pb-24 px-6 lg:px-12">
-        <div className="max-w-[1400px] mx-auto">
+      <section className="min-h-screen bg-[#f0f0ef] text-[#111] pt-6 pb-16 px-4 lg:px-6">
+        <div className="w-full">
+
+          {/* HEADER — compact */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mb-8"
+            transition={{ duration: 0.4 }}
+            className="mb-5"
           >
-            <Link
-              to="/admin"
-              className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500 hover:text-[#111] mb-6 transition-colors group"
-            >
-              <ArrowLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
-              Back to Dashboard
-            </Link>
-
-            <div className="flex items-center gap-2 flex-wrap mb-2">
-              <div className="p-1 bg-white border border-black/10 rounded">
-                <Rocket
-                  className="w-3.5 h-3.5 text-[#06b6d4]"
-                  strokeWidth={1.75}
-                />
-              </div>
-              <p className="text-[9px] font-mono uppercase tracking-[0.25em] text-gray-500">
-                // Admin · Projects
-              </p>
-            </div>
-
-            <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight leading-tight">
+            <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight leading-tight">
               Projects Editor
             </h1>
-
-            <div className="mt-2.5 relative h-[2px] w-full overflow-hidden">
+            <div className="mt-2 relative h-[2px] w-full overflow-hidden">
               <div
                 className="absolute inset-0"
                 style={{
@@ -241,35 +231,34 @@ const ProjectsEditor = () => {
                 transition={{ duration: 1.8, repeat: Infinity, ease: 'linear' }}
               />
             </div>
-
-            <p className="text-sm text-gray-600 leading-relaxed mt-4 font-light max-w-2xl">
-              Click a project on the left to edit its grid card and case study
-              details.
-            </p>
           </motion.div>
 
           {success && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-6 flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800"
+              className="mb-4 flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800"
             >
-              <Check className="w-4 h-4" /> Changes saved successfully.
+              <Check className="w-4 h-4" />
+              Changes saved successfully.
             </motion.div>
           )}
           {error && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-6 flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-800"
+              className="mb-4 flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-800"
             >
-              <AlertCircle className="w-4 h-4" /> {error}
+              <AlertCircle className="w-4 h-4" />
+              {error}
             </motion.div>
           )}
 
-          <div className="grid lg:grid-cols-12 gap-6">
-            {/* Project list */}
-            <div className="lg:col-span-4 space-y-2">
+          {/* MAIN LAYOUT — full width list + editor */}
+          <div className="grid grid-cols-12 gap-4">
+
+            {/* LEFT: Project list */}
+            <div className="col-span-12 md:col-span-5 lg:col-span-4 space-y-2">
               {projects.map((p) => (
                 <button
                   key={p.id}
@@ -297,26 +286,20 @@ const ProjectsEditor = () => {
               </button>
             </div>
 
-            {/* Editor */}
-            <div className="lg:col-span-8">
-              {!selected ? (
-                <div className="flex items-center justify-center py-32 bg-white/50 border border-dashed border-black/20 rounded-2xl">
-                  <p className="text-sm font-mono text-gray-500">
-                    ← Select a project to edit
-                  </p>
-                </div>
-              ) : (
+            {/* RIGHT: Editor */}
+            <div className="col-span-12 md:col-span-7 lg:col-span-8">
+              {selected ? (
                 <motion.div
                   key={selected.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="space-y-6"
+                  transition={{ duration: 0.3 }}
+                  className="space-y-4"
                 >
-                  {/* Grid card */}
-                  <div className="bg-white border border-black/10 rounded-2xl p-6 md:p-8">
-                    <div className="flex items-start justify-between mb-6">
-                      <h2 className="font-display text-xl font-bold">
+                  {/* Grid Card section */}
+                  <div className="bg-white border border-black/10 rounded-2xl p-5 md:p-6">
+                    <div className="flex items-start justify-between mb-5">
+                      <h2 className="font-display text-lg font-bold">
                         Grid Card
                       </h2>
                       <button
@@ -328,7 +311,7 @@ const ProjectsEditor = () => {
                       </button>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Field label="Slug (URL)">
                         <input
                           className={inputClass}
@@ -400,7 +383,7 @@ const ProjectsEditor = () => {
                       <Field label="Description">
                         <textarea
                           className={inputClass}
-                          rows={3}
+                          rows={2}
                           value={selected.description || ''}
                           onChange={(e) =>
                             updateProject('description', e.target.value)
@@ -428,7 +411,7 @@ const ProjectsEditor = () => {
                       </Field>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4 mt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                       <Field label="GitHub URL">
                         <input
                           className={inputClass}
@@ -458,219 +441,191 @@ const ProjectsEditor = () => {
                     </div>
                   </div>
 
-                  {/* Case study */}
-                  <div className="bg-white border border-black/10 rounded-2xl p-6 md:p-8 space-y-4">
-                    <h2 className="font-display text-xl font-bold mb-2">
-                      Case Study Details
-                    </h2>
+                  {/* Case study section */}
+                  <div className="bg-white border border-black/10 rounded-2xl p-5 md:p-6">
+                    <details className="group">
+                      <summary className="flex items-center justify-between cursor-pointer list-none">
+                        <h2 className="font-display text-lg font-bold">
+                          Case Study Details
+                        </h2>
+                        <ChevronDown className="w-4 h-4 text-gray-400 group-open:rotate-180 transition-transform" />
+                      </summary>
 
-                    <Field label="Tagline">
-                      <textarea
-                        className={inputClass}
-                        rows={2}
-                        value={details[selected.slug]?.tagline || ''}
-                        onChange={(e) =>
-                          updateDetail('tagline', e.target.value)
-                        }
-                      />
-                    </Field>
+                      <div className="space-y-4 mt-5">
+                        <Field label="Tagline">
+                          <textarea
+                            className={inputClass}
+                            rows={2}
+                            value={details[selected.slug]?.tagline || ''}
+                            onChange={(e) =>
+                              updateDetail('tagline', e.target.value)
+                            }
+                          />
+                        </Field>
 
-                    <Field label="Intro">
-                      <textarea
-                        className={inputClass}
-                        rows={3}
-                        value={details[selected.slug]?.intro || ''}
-                        onChange={(e) => updateDetail('intro', e.target.value)}
-                      />
-                    </Field>
+                        <Field label="Intro">
+                          <textarea
+                            className={inputClass}
+                            rows={3}
+                            value={details[selected.slug]?.intro || ''}
+                            onChange={(e) =>
+                              updateDetail('intro', e.target.value)
+                            }
+                          />
+                        </Field>
 
-                    <Field label="Challenge (pull-quote)">
-                      <textarea
-                        className={inputClass}
-                        rows={3}
-                        value={details[selected.slug]?.challenge || ''}
-                        onChange={(e) =>
-                          updateDetail('challenge', e.target.value)
-                        }
-                      />
-                    </Field>
+                        <Field label="Challenge (pull-quote)">
+                          <textarea
+                            className={inputClass}
+                            rows={3}
+                            value={details[selected.slug]?.challenge || ''}
+                            onChange={(e) =>
+                              updateDetail('challenge', e.target.value)
+                            }
+                          />
+                        </Field>
 
-                    <Field label="Build">
-                      <textarea
-                        className={inputClass}
-                        rows={3}
-                        value={details[selected.slug]?.build || ''}
-                        onChange={(e) => updateDetail('build', e.target.value)}
-                      />
-                    </Field>
+                        <Field label="Build">
+                          <textarea
+                            className={inputClass}
+                            rows={3}
+                            value={details[selected.slug]?.build || ''}
+                            onChange={(e) =>
+                              updateDetail('build', e.target.value)
+                            }
+                          />
+                        </Field>
 
-                    <Field label="Highlights (one per line)">
-                      <textarea
-                        className={inputClass}
-                        rows={4}
-                        value={(
-                          details[selected.slug]?.highlights || []
-                        ).join('\n')}
-                        onChange={(e) =>
-                          updateDetail(
-                            'highlights',
-                            e.target.value.split('\n').filter(Boolean)
-                          )
-                        }
-                      />
-                    </Field>
+                        <Field label="Highlights (one per line)">
+                          <textarea
+                            className={inputClass}
+                            rows={4}
+                            value={(
+                              details[selected.slug]?.highlights || []
+                            ).join('\n')}
+                            onChange={(e) =>
+                              updateDetail(
+                                'highlights',
+                                e.target.value.split('\n').filter(Boolean)
+                              )
+                            }
+                          />
+                        </Field>
 
-                    <Field label="Takeaway">
-                      <textarea
-                        className={inputClass}
-                        rows={2}
-                        value={details[selected.slug]?.takeaway || ''}
-                        onChange={(e) =>
-                          updateDetail('takeaway', e.target.value)
-                        }
-                      />
-                    </Field>
+                        <Field label="Takeaway">
+                          <textarea
+                            className={inputClass}
+                            rows={2}
+                            value={details[selected.slug]?.takeaway || ''}
+                            onChange={(e) =>
+                              updateDetail('takeaway', e.target.value)
+                            }
+                          />
+                        </Field>
 
-                    {/* Multi-screenshot uploader */}
-                    <div>
-                      <label className="block text-[10px] font-mono uppercase tracking-[0.2em] text-gray-600 mb-2">
-                        Case Study Screenshots
-                      </label>
-                      <div className="space-y-3">
-                        {(details[selected.slug]?.screenshots || []).map(
-                          (url, idx) => (
-                            <div key={idx} className="flex items-start gap-2">
-                              <div className="flex-1">
-                                <ImageUpload
-                                  label={`Screenshot ${idx + 1}`}
-                                  value={url}
-                                  onChange={(newUrl) => {
-                                    const next = [
-                                      ...(details[selected.slug]
-                                        ?.screenshots || []),
-                                    ]
-                                    next[idx] = newUrl
-                                    updateDetail('screenshots', next)
-                                  }}
-                                />
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const next = (
-                                    details[selected.slug]?.screenshots || []
-                                  ).filter((_, i) => i !== idx)
-                                  updateDetail('screenshots', next)
-                                }}
-                                className="shrink-0 mt-6 p-2 border border-red-200 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          )
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const next = [
-                              ...(details[selected.slug]?.screenshots || []),
-                              '',
-                            ]
-                            updateDetail('screenshots', next)
-                          }}
-                          className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest px-4 py-2.5 border border-black/15 rounded-lg hover:bg-white hover:border-black/30 transition-all"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          Add Screenshot
-                        </button>
+                        <Field label="Screenshots (one URL per line)">
+                          <textarea
+                            className={inputClass}
+                            rows={3}
+                            value={(
+                              details[selected.slug]?.screenshots || []
+                            ).join('\n')}
+                            onChange={(e) =>
+                              updateDetail(
+                                'screenshots',
+                                e.target.value.split('\n').filter(Boolean)
+                              )
+                            }
+                            placeholder="/projects/n4yctf-1.png"
+                          />
+                        </Field>
+
+                        <Field label="Video URL (optional)">
+                          <input
+                            className={inputClass}
+                            value={details[selected.slug]?.video_url || ''}
+                            onChange={(e) =>
+                              updateDetail('video_url', e.target.value)
+                            }
+                            placeholder="/projects/expense-tracker-demo.mp4"
+                          />
+                        </Field>
+
+                        <Field label="Specs (Label | Value, one per line)">
+                          <textarea
+                            className={inputClass}
+                            rows={4}
+                            value={(details[selected.slug]?.specs || [])
+                              .map((s) => `${s.label} | ${s.value}`)
+                              .join('\n')}
+                            onChange={(e) => {
+                              const specs = e.target.value
+                                .split('\n')
+                                .map((line) => {
+                                  const [label, ...rest] = line.split('|')
+                                  return {
+                                    label: label?.trim(),
+                                    value: rest.join('|').trim(),
+                                  }
+                                })
+                                .filter((s) => s.label)
+                              updateDetail('specs', specs)
+                            }}
+                          />
+                        </Field>
+
+                        <Field label="Framework (one per line)">
+                          <textarea
+                            className={inputClass}
+                            rows={2}
+                            value={(
+                              details[selected.slug]?.framework || []
+                            ).join('\n')}
+                            onChange={(e) =>
+                              updateDetail(
+                                'framework',
+                                e.target.value.split('\n').filter(Boolean)
+                              )
+                            }
+                          />
+                        </Field>
+
+                        <Field label="Key Features (one per line)">
+                          <textarea
+                            className={inputClass}
+                            rows={3}
+                            value={(
+                              details[selected.slug]?.key_features || []
+                            ).join('\n')}
+                            onChange={(e) =>
+                              updateDetail(
+                                'key_features',
+                                e.target.value.split('\n').filter(Boolean)
+                              )
+                            }
+                          />
+                        </Field>
+
+                        <Field label="Tech Stack Detail (one per line)">
+                          <textarea
+                            className={inputClass}
+                            rows={3}
+                            value={(
+                              details[selected.slug]?.tech_stack_detail || []
+                            ).join('\n')}
+                            onChange={(e) =>
+                              updateDetail(
+                                'tech_stack_detail',
+                                e.target.value.split('\n').filter(Boolean)
+                              )
+                            }
+                          />
+                        </Field>
                       </div>
-                    </div>
-
-                    <Field label="Video URL (optional)">
-                      <input
-                        className={inputClass}
-                        value={details[selected.slug]?.video_url || ''}
-                        onChange={(e) =>
-                          updateDetail('video_url', e.target.value)
-                        }
-                        placeholder="/projects/expense-tracker-demo.mp4"
-                      />
-                    </Field>
-
-                    <Field label="Specs (Label | Value, one per line)">
-                      <textarea
-                        className={inputClass}
-                        rows={4}
-                        value={(details[selected.slug]?.specs || [])
-                          .map((s) => `${s.label} | ${s.value}`)
-                          .join('\n')}
-                        onChange={(e) => {
-                          const specs = e.target.value
-                            .split('\n')
-                            .map((line) => {
-                              const [label, ...rest] = line.split('|')
-                              return {
-                                label: label?.trim(),
-                                value: rest.join('|').trim(),
-                              }
-                            })
-                            .filter((s) => s.label)
-                          updateDetail('specs', specs)
-                        }}
-                        placeholder={`Frontend | React 18, TypeScript\nBackend | Node, Express`}
-                      />
-                    </Field>
-
-                    <Field label="Framework (one per line)">
-                      <textarea
-                        className={inputClass}
-                        rows={2}
-                        value={(
-                          details[selected.slug]?.framework || []
-                        ).join('\n')}
-                        onChange={(e) =>
-                          updateDetail(
-                            'framework',
-                            e.target.value.split('\n').filter(Boolean)
-                          )
-                        }
-                      />
-                    </Field>
-
-                    <Field label="Key Features (one per line)">
-                      <textarea
-                        className={inputClass}
-                        rows={3}
-                        value={(
-                          details[selected.slug]?.key_features || []
-                        ).join('\n')}
-                        onChange={(e) =>
-                          updateDetail(
-                            'key_features',
-                            e.target.value.split('\n').filter(Boolean)
-                          )
-                        }
-                      />
-                    </Field>
-
-                    <Field label="Tech Stack Detail (one per line)">
-                      <textarea
-                        className={inputClass}
-                        rows={3}
-                        value={(
-                          details[selected.slug]?.tech_stack_detail || []
-                        ).join('\n')}
-                        onChange={(e) =>
-                          updateDetail(
-                            'tech_stack_detail',
-                            e.target.value.split('\n').filter(Boolean)
-                          )
-                        }
-                      />
-                    </Field>
+                    </details>
                   </div>
 
-                  {/* Save */}
+                  {/* Save button */}
                   <div className="flex justify-end">
                     <button
                       onClick={handleSave}
@@ -694,6 +649,12 @@ const ProjectsEditor = () => {
                     </button>
                   </div>
                 </motion.div>
+              ) : (
+                <div className="flex items-center justify-center py-32 bg-white/50 border border-dashed border-black/20 rounded-2xl">
+                  <p className="text-sm font-mono text-gray-500">
+                    No projects yet — click "Add Project" to create one
+                  </p>
+                </div>
               )}
             </div>
           </div>

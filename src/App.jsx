@@ -21,6 +21,7 @@ import ProjectDetail from './pages/ProjectDetail'
 import Achievements from './pages/Achievements'
 import Contact from './pages/Contact'
 
+
 // Admin pages
 import Login from './pages/admin/Login'
 import Dashboard from './pages/admin/Dashboard'
@@ -42,19 +43,16 @@ function AppLayout({ children }) {
   const isLoginPage = location.pathname === '/admin/login'
   const useAdminLayout = isAdminRoute && !isLoginPage
 
-  /* Custom analytics — fires on every public page view */
   useEffect(() => {
     if (!isAdminRoute) {
       trackPageView(location.pathname)
     }
   }, [location.pathname, isAdminRoute])
 
-  /* Admin pages (except login) get the sidebar layout */
   if (useAdminLayout) {
     return <AdminLayout>{children}</AdminLayout>
   }
 
-  /* Public pages + login get the standard layout */
   return (
     <div className="min-h-screen bg-[#f0f0ef] text-[#111] selection:bg-[#06b6d4] selection:text-black flex flex-col">
       {!isAdminRoute && <Navbar />}
@@ -105,15 +103,19 @@ function App() {
     <Router>
       <AppLayout>
         <Routes>
+          {/* ══════════ Public ══════════ */}
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/contact" element={<Contact />} />
+         
 
+          {/* ══════════ Admin Auth ══════════ */}
           <Route path="/admin/login" element={<Login />} />
 
+          {/* ══════════ Admin ══════════ */}
           <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/admin/profile" element={<ProtectedRoute><ProfileEditor /></ProtectedRoute>} />
           <Route path="/admin/education" element={<ProtectedRoute><EducationEditor /></ProtectedRoute>} />

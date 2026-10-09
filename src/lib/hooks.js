@@ -153,3 +153,29 @@ export const usePageViews = () =>
   useSupabaseQuery('page_views', {
     order: { column: 'visited_at', ascending: false },
   })
+
+  /**
+ * Fetch all published blog posts (public view).
+ */
+export const useBlogPosts = () =>
+  useSupabaseQuery('blog_posts', {
+    eq: { column: 'published', value: true },
+    order: { column: 'published_at', ascending: false },
+  })
+
+/**
+ * Fetch a single blog post by slug (public — only published).
+ */
+export const useBlogPost = (slug) =>
+  useSupabaseQuery('blog_posts', {
+    eq: { column: 'slug', value: slug },
+    single: true,
+  })
+
+/**
+ * Fetch ALL blog posts (admin view — includes drafts).
+ */
+export const useAllBlogPosts = () =>
+  useSupabaseQuery('blog_posts', {
+    order: { column: 'created_at', ascending: false },
+  })
